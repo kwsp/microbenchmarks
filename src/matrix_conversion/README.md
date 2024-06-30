@@ -1,6 +1,6 @@
 # Matrix Conversion Benchmark
 
-Intel i9-13900K, Windows 11
+Intel i9-13900K, Windows 11. MSVC cannot vectorize the loops.
 
 ```
 2024-06-25T22:16:29-05:00
@@ -37,7 +37,7 @@ BM_OpenCVMatParallelConversion/512       18062 ns        18032 ns        40727
 BM_OpenCVMatParallelConversion/4096    3422001 ns      3125000 ns          280
 ```
 
-Apple Macbook Air M1
+Apple Macbook Air M1. Clang is able to vectorize the handrolled loops here.
 
 ```
 Running /Users/tnie/code/cpp/microbenches/build/release/src/matrix_conversion/matrix_conversion_benchmark
