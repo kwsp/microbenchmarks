@@ -36,3 +36,36 @@ BM_OpenCVMatParallelConversion/256       10115 ns        10045 ns        74667
 BM_OpenCVMatParallelConversion/512       18062 ns        18032 ns        40727
 BM_OpenCVMatParallelConversion/4096    3422001 ns      3125000 ns          280
 ```
+
+Apple Macbook Air M1
+
+```
+Running /Users/tnie/code/cpp/microbenches/build/release/src/matrix_conversion/matrix_conversion_benchmark
+Run on (8 X 24 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB
+  L1 Instruction 128 KiB
+  L2 Unified 4096 KiB (x8)
+Load Average: 4.77, 40.19, 43.64
+------------------------------------------------------------------------------
+Benchmark                                    Time             CPU   Iterations
+------------------------------------------------------------------------------
+BM_ArmadilloConversion/256               10562 ns        10518 ns        66128
+BM_ArmadilloConversion/512              124011 ns       123235 ns         5650
+BM_ArmadilloConversion/4096           12081034 ns     11013613 ns           62
+BM_HandRolledConversion/256               6965 ns         6949 ns        99691
+BM_HandRolledConversion/512              34383 ns        34285 ns        21606
+BM_HandRolledConversion/4096           3727255 ns      3697326 ns          187
+BM_OpenCVParallelConversion1/256       3389555 ns      3180462 ns          212
+BM_OpenCVParallelConversion1/512      14009253 ns     12099855 ns           55
+BM_OpenCVParallelConversion1/4096    896351000 ns    802086000 ns            1
+BM_OpenCVParallelConversion2/256         17096 ns        16924 ns        41771
+BM_OpenCVParallelConversion2/512         40472 ns        40144 ns        17431
+BM_OpenCVParallelConversion2/4096      3945687 ns      3744016 ns          187
+BM_OpenCVMatConversion/256                7730 ns         7693 ns        89194
+BM_OpenCVMatConversion/512               35324 ns        35219 ns        22661
+BM_OpenCVMatConversion/4096            2972343 ns      2965856 ns          236
+BM_OpenCVMatParallelConversion/256       16597 ns        16468 ns        42360
+BM_OpenCVMatParallelConversion/512       46563 ns        46185 ns        15265
+BM_OpenCVMatParallelConversion/4096    4058611 ns      3365724 ns          185
+```

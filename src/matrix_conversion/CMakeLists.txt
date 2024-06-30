@@ -14,8 +14,13 @@ set_target_properties(${TARGET} PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
-target_link_libraries(${TARGET} armadillo benchmark::benchmark)
+target_link_libraries(${TARGET} 
+    armadillo 
+    benchmark::benchmark
+    opencv_world
+)
 
 if(OpenMP_CXX_FOUND) 
-    target_link_libraries(${TARGET} OpenMP::OpenMP_CXX opencv_world)
+    target_compile_definitions(${TARGET} PRIVATE HAS_OPENMP)
+    target_link_libraries(${TARGET} OpenMP::OpenMP_CXX)
 endif()

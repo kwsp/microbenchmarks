@@ -18,6 +18,7 @@ void HandRolledConversion(const arma::Mat<uint16_t> &input,
   }
 }
 
+#ifdef HAS_OMP
 // Function to convert matrix using a hand-rolled for loop
 void OpenMPConversion(const arma::Mat<uint16_t> &input,
                       arma::Mat<double> &output) {
@@ -27,6 +28,7 @@ void OpenMPConversion(const arma::Mat<uint16_t> &input,
     output.memptr()[i] = static_cast<double>(input.mem[i]);
   }
 }
+#endif
 
 // Function to convert matrix using OpenCV's cv::parallel_for_
 void OpenCVParallelConversion1(const arma::Mat<uint16_t> &input,
@@ -98,11 +100,13 @@ static void BM_HandRolledConversion(benchmark::State &state) {
 }
 BENCHMARK(BM_HandRolledConversion)->Range(256, 4096);
 
+#ifdef HAS_OMP
 // Benchmark for OpenMP conversion
 static void BM_OpenMPConversion(benchmark::State &state) {
   BenchmarkArmaFunc(state, OpenMPConversion);
 }
 BENCHMARK(BM_OpenMPConversion)->Range(256, 4096);
+#endif
 
 // Benchmark for OpenCV parallel_for_ conversion
 static void BM_OpenCVParallelConversion1(benchmark::State &state) {
