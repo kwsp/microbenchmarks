@@ -81,8 +81,7 @@
       "configuration": "Debug"
     },
     {
-      "name": "ninja-debug",
-      "displayName": "Debug",
+      "name": "Ninja Debug",
       "configurePreset": "ninja-multi",
       "configuration": "Debug"
     },
