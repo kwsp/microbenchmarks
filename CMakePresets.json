@@ -13,24 +13,6 @@
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
     },
     {
-      "name": "debug",
-      "inherits": "base",
-      "displayName": "Debug",
-      "description": "Debug build with no special settings",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "release",
-      "inherits": "base",
-      "displayName": "Release",
-      "description": "Release build with no special settings",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
       "name": "win64",
       "displayName": "Win64 (Visual Studio 2022)",
       "inherits": "base",
@@ -46,39 +28,22 @@
       }
     },
     {
-      "name": "clang",
-      "hidden": true,
+      "name": "ninja-multi",
       "inherits": "base",
-      "generator": "Ninja",
+      "displayName": "Ninja Multi-Config",
+      "description": "A generic Ninja Multi-Config configuration",
+      "generator": "Ninja Multi-Config"
+    },
+    {
+      "name": "clang",
+      "inherits": "ninja-multi",
+      "displayName": "Ninja Multi-Config (clang)",
+      "description": "A Clang specific Ninja Multi-Config cnofiguration",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
         "CMAKE_CXX_FLAGS": "-Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize",
         "CMAKE_CXX_CLANG_TIDY": "clang-tidy;--format-style=file"
-      }
-    },
-    {
-      "name": "clang-debug",
-      "displayName": "Clang Debug",
-      "inherits": "clang",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "clang-relwithdebinfo",
-      "displayName": "Clang RelWithDebInfo",
-      "inherits": "clang",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "clang-release",
-      "displayName": "Clang Release",
-      "inherits": "clang",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ],
@@ -97,6 +62,41 @@
       "name": "Win64 Debug",
       "configurePreset": "win64",
       "configuration": "Debug"
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Debug",
+      "configurePreset": "ninja-multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "configurePreset": "ninja-multi",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Release",
+      "configurePreset": "ninja-multi",
+      "configuration": "Release"
+    },
+    {
+      "name": "clang-debug",
+      "displayName": "Debug",
+      "configurePreset": "clang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-relwithdebinfo",
+      "displayName": "RelWithDebInfo",
+      "configurePreset": "clang",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "clang-release",
+      "configurePreset": "clang",
+      "configuration": "Release"
     }
   ]
 }
