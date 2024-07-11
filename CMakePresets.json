@@ -13,43 +13,43 @@
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
     },
     {
-      "name": "debug",
-      "inherits": "base",
-      "displayName": "Debug",
-      "description": "Debug build with no special settings",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "release",
-      "inherits": "base",
-      "displayName": "Release",
-      "description": "Release build with no special settings",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
-    },
-    {
-      "name": "win64",
-      "displayName": "Win64 (Visual Studio 2022)",
+      "name": "win64-cl-base",
+      "hidden": true,
       "inherits": "base",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/arch:AVX2 /EHsc /Qvec-report:2",
-        "CMAKE_C_FLAGS": "/arch:AVX2 /EHsc /Qvec-report:2"
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_C_FLAGS": "/arch:AVX2 /EHsc /Qvec-report:2",
+        "CMAKE_CXX_FLAGS": "/arch:AVX2 /EHsc /Qvec-report:2"
       }
     },
     {
-      "name": "clang",
-      "hidden": true,
+      "name": "win64",
+      "displayName": "Win64 (Visual Studio 2022)",
+      "inherits": "win64-cl-base",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "ninja-multi",
       "inherits": "base",
-      "generator": "Ninja",
+      "displayName": "Ninja Multi-Config",
+      "description": "A generic Ninja Multi-Config configuration",
+      "generator": "Ninja Multi-Config"
+    },
+    {
+      "name": "clang-multi",
+      "inherits": "ninja-multi",
+      "displayName": "Ninja Multi-Config (clang)",
+      "description": "A Clang specific Ninja Multi-Config configuration",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
@@ -58,37 +58,134 @@
       }
     },
     {
-      "name": "clang-debug",
-      "displayName": "Clang Debug",
-      "inherits": "clang",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "clang-release",
-      "displayName": "Clang Release",
-      "inherits": "clang",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
+      "name": "cl-multi",
+      "inherits": ["ninja-multi", "win64-cl-base"],
+      "displayName": "Ninja Multi-Config (MSVC x64)",
+      "description": "A x64 MSVC specific Ninja Multi-Config configuration"
     }
   ],
   "buildPresets": [
     {
-      "name": "Win64 Release",
+      "name": "win64-release",
+      "displayName": "Win64 Release",
       "configurePreset": "win64",
       "configuration": "Release"
     },
     {
-      "name": "Win64 RelWithDebInfo",
+      "name": "win64-relwithdebinfo",
+      "displayName": "Win64 RelWithDebInfo",
       "configurePreset": "win64",
       "configuration": "RelWithDebInfo"
     },
     {
-      "name": "Win64 Debug",
+      "name": "win64-debug",
+      "displayName": "Win64 Debug",
       "configurePreset": "win64",
       "configuration": "Debug"
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja Debug",
+      "configurePreset": "ninja-multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ninja-relwithdebinfo",
+      "displayName": "Ninja RelWithDebInfo",
+      "configurePreset": "ninja-multi",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja Release",
+      "configurePreset": "ninja-multi",
+      "configuration": "Release"
+    },
+    {
+      "name": "clang-debug",
+      "displayName": "Clang Debug",
+      "configurePreset": "clang-multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-relwithdebinfo",
+      "displayName": "Clang RelWithDebInfo",
+      "configurePreset": "clang-multi",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "clang-release",
+      "displayName": "Clang Release",
+      "configurePreset": "clang-multi",
+      "configuration": "Release"
+    },
+    {
+      "name": "cl-debug",
+      "displayName": "CL Debug",
+      "configurePreset": "cl-multi",
+      "configuration": "Debug"
+    },
+    {
+      "name": "cl-relwithdebinfo",
+      "displayName": "CL RelWithDebInfo",
+      "configurePreset": "cl-multi",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "cl-release",
+      "displayName": "CL Release",
+      "configurePreset": "cl-multi",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-win64-debug",
+      "displayName": "Test (Debug)",
+      "configuration": "Debug",
+      "configurePreset": "win64"
+    },
+    {
+      "name": "test-win64-release",
+      "displayName": "Test (Release)",
+      "configuration": "Release",
+      "configurePreset": "win64"
+    },
+    {
+      "name": "test-ninja-debug",
+      "displayName": "Test (Debug)",
+      "configuration": "Debug",
+      "configurePreset": "ninja-multi"
+    },
+    {
+      "name": "test-ninja-release",
+      "displayName": "Test (Release)",
+      "configuration": "Release",
+      "configurePreset": "ninja-multi"
+    },
+    {
+      "name": "test-clang-debug",
+      "displayName": "Test (Debug)",
+      "configuration": "Debug",
+      "configurePreset": "clang-multi"
+    },
+    {
+      "name": "test-clang-release",
+      "displayName": "Test (Release)",
+      "configuration": "Release",
+      "configurePreset": "clang-multi"
+    },
+    {
+      "name": "test-cl-debug",
+      "displayName": "Test (Debug)",
+      "configuration": "Debug",
+      "configurePreset": "cl-multi"
+    },
+    {
+      "name": "test-cl-release",
+      "displayName": "Test (Release)",
+      "configuration": "Release",
+      "configurePreset": "cl-multi"
     }
   ]
 }
