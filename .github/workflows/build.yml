@@ -9,12 +9,19 @@ env:
   VCPKG_ROOT: ${{ github.workspace }}/vcpkg
   VCPKG_EXE: ${{ github.workspace }}/vcpkg/vcpkg
   FEED_URL: https://nuget.pkg.github.com/kwsp/index.json
-  VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/kwsp/index.json,readwrite"
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite;nuget,https://nuget.pkg.github.com/kwsp/index.json,readwrite"
 
 jobs:
   Build-Win64:
     runs-on: windows-2022
     steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
       - uses: actions/checkout@v4
         with:
           submodules: true
@@ -59,11 +66,19 @@ jobs:
   Build-mac:
     runs-on: macos-latest
     steps:
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
       - uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Install system-wide build tools
+        shell: bash
         # Install
         #   mono: NuGet requires a dotnet runtime
         #   ninja: Build system
@@ -72,37 +87,41 @@ jobs:
         run: |
           brew install mono ninja llvm
           ln -s $(brew --prefix llvm)/bin/clang-tidy /usr/local/bin/clang-tidy
+          brew install autoconf autoconf-archive automake libtool
 
       - name: Setup VCPKG
+        shell: bash
         run: |
           cd ${{ github.workspace }}
           git clone https://github.com/microsoft/vcpkg
           ${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh
 
       - name: Add NuGet sources
+        shell: bash
         run: |
-          ${{ env.VCPKG_EXE }} fetch nuget
-          mono $(${{ env.VCPKG_EXE }} fetch nuget) \
+          mono `${{ env.VCPKG_EXE }} fetch nuget | tail -n 1` \
             sources add \
             -Source "${{ env.FEED_URL }}" \
             -StorePasswordInClearText \
             -Name GitHubPackages \
             -UserName "${{ env.USERNAME }}" \
             -Password "${{ secrets.GH_PACKAGES_TOKEN }}"
-          mono $(${{ env.VCPKG_EXE }} fetch nuget) \
+          mono `${{ env.VCPKG_EXE }} fetch nuget | tail -n 1` \
             setapikey "${{ secrets.GH_PACKAGES_TOKEN }}" \
             -Source "${{ env.FEED_URL }}"
 
       - name: CMake configure
-        run: cmake --preset clang-multi
+        shell: bash
+        run: cmake --preset clang
 
       - name: CMake build
+        shell: bash
         run: cmake --build --preset clang-release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifact
-          path: ${{ github.workspace }}/build/clang-multi/src/Release/main
+          path: ${{ github.workspace }}/build/clang/src/Release/main
           if-no-files-found: "warn" # output a warning if no files are found.
           overwrite: true
