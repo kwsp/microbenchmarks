@@ -40,17 +40,11 @@
       "generator": "Visual Studio 17 2022"
     },
     {
-      "name": "ninja",
-      "inherits": "base",
-      "displayName": "Ninja Multi-Config",
-      "description": "Generic Ninja Multi-Config with no compiler specified",
-      "generator": "Ninja Multi-Config"
-    },
-    {
       "name": "clang",
-      "inherits": "ninja",
+      "inherits": "base",
       "displayName": "Clang",
       "description": "Ninja Multi-Config + Clang",
+      "generator": "Ninja Multi-Config",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++"
@@ -59,17 +53,28 @@
     {
       "name": "clang-vec-report",
       "inherits": "clang",
-      "displayName": "Clang (with vec report)",
-      "description": "Ninja Multi-Config + Clang (with autovectorizer report)",
+      "displayName": "Clang with vec report",
+      "description": "Ninja Multi-Config + Clang with autovectorizer report",
+      "generator": "Ninja Multi-Config",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize"
       }
     },
     {
+      "name": "clang-asan",
+      "inherits": "clang",
+      "displayName": "Clang with ASAN",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-fsanitize=address -fno-omit-frame-pointer",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer"
+      }
+    },
+    {
       "name": "cl",
-      "inherits": ["ninja", "win64-cl-base"],
+      "inherits": "win64-cl-base",
       "displayName": "CL",
-      "description": "Ninja Multi-Config + x64 MSVC"
+      "description": "Ninja Multi-Config + x64 MSVC",
+      "generator": "Ninja Multi-Config"
     },
     {
       "name": "cl-vec-report",
@@ -101,24 +106,6 @@
       "configuration": "Debug"
     },
     {
-      "name": "ninja-debug",
-      "displayName": "Ninja Debug",
-      "configurePreset": "ninja",
-      "configuration": "Debug"
-    },
-    {
-      "name": "ninja-relwithdebinfo",
-      "displayName": "Ninja RelWithDebInfo",
-      "configurePreset": "ninja",
-      "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "ninja-release",
-      "displayName": "Ninja Release",
-      "configurePreset": "ninja",
-      "configuration": "Release"
-    },
-    {
       "name": "clang-debug",
       "displayName": "Clang Debug",
       "configurePreset": "clang",
@@ -143,6 +130,24 @@
       "configuration": "Release"
     },
     {
+      "name": "clang-asan-debug",
+      "displayName": "Clang ASan Debug",
+      "configurePreset": "clang-asan",
+      "configuration": "Debug"
+    },
+    {
+      "name": "clang-asan-relwithdebinfo",
+      "displayName": "Clang ASan RelWithDebInfo",
+      "configurePreset": "clang-asan",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "clang-asan-release",
+      "displayName": "Clang ASan Release",
+      "configurePreset": "clang-asan",
+      "configuration": "Release"
+    },
+    {
       "name": "cl-debug",
       "displayName": "CL Debug",
       "configurePreset": "cl",
@@ -159,56 +164,6 @@
       "displayName": "CL Release",
       "configurePreset": "cl",
       "configuration": "Release"
-    }
-  ],
-  "testPresets": [
-    {
-      "name": "test-win64-debug",
-      "displayName": "Test (Debug)",
-      "configuration": "Debug",
-      "configurePreset": "win64"
-    },
-    {
-      "name": "test-win64-release",
-      "displayName": "Test (Release)",
-      "configuration": "Release",
-      "configurePreset": "win64"
-    },
-    {
-      "name": "test-ninja-debug",
-      "displayName": "Test (Debug)",
-      "configuration": "Debug",
-      "configurePreset": "ninja"
-    },
-    {
-      "name": "test-ninja-release",
-      "displayName": "Test (Release)",
-      "configuration": "Release",
-      "configurePreset": "ninja"
-    },
-    {
-      "name": "test-clang-debug",
-      "displayName": "Test (Debug)",
-      "configuration": "Debug",
-      "configurePreset": "clang"
-    },
-    {
-      "name": "test-clang-release",
-      "displayName": "Test (Release)",
-      "configuration": "Release",
-      "configurePreset": "clang"
-    },
-    {
-      "name": "test-cl-debug",
-      "displayName": "Test (Debug)",
-      "configuration": "Debug",
-      "configurePreset": "cl"
-    },
-    {
-      "name": "test-cl-release",
-      "displayName": "Test (Release)",
-      "configuration": "Release",
-      "configurePreset": "cl"
     }
   ]
 }
