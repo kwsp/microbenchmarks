@@ -6,6 +6,7 @@ find_package(OpenBLAS CONFIG REQUIRED)
 find_package(KFR CONFIG REQUIRED)
 find_package(FFTW3 CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
+find_package(OpenCV CONFIG REQUIRED)
 find_path(FFTCONV_INCLUDE_DIRS "fftconv.hpp")
 
 function(add_executable_script EXE_NAME)
@@ -32,6 +33,7 @@ function(add_executable_script EXE_NAME)
     FFTW3::fftw3f
     kfr
     kfr_dsp
+    opencv_world
   )
   
   if (APPLE)

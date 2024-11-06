@@ -10,6 +10,7 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <kfr/all.hpp>
+#include <opencv2/opencv.hpp>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -22,7 +23,7 @@ im2col_matrix must be preallocated to have size output_size * kernel_size,
 where output_size = input_size - kernel_size + 1
 */
 template <typename T>
-void conv1d_blas_im2col(std::span<const T> input, std::span<const T> kernel,
+void conv1d_BLAS_im2col(std::span<const T> input, std::span<const T> kernel,
                         std::span<T> im2col_matrix, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
@@ -61,8 +62,8 @@ im2col_matrix must be preallocated to have size output_size * kernel_size,
 where output_size = input_size - kernel_size + 1
 */
 template <typename T>
-void conv1d_openblas_same(std::span<const T> input, std::span<const T> kernel,
-                          std::span<T> im2col_matrix, std::span<T> output)
+void conv1d_BLAS_same(std::span<const T> input, std::span<const T> kernel,
+                      std::span<T> im2col_matrix, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
   const int input_size = input.size();
@@ -111,7 +112,7 @@ Conv1d using Accelerate's vDSP
 'valid' mode. output size must be (input.size() - kernel.size() + 1)
 */
 template <typename T>
-void conv1d_vdsp(const std::span<const T> input,
+void conv1d_vDSP(const std::span<const T> input,
                  const std::span<const T> kernel, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
@@ -130,7 +131,7 @@ void conv1d_vdsp(const std::span<const T> input,
 #endif
 
 /*
-Eigen
+Eigen (valid mode)
 */
 template <typename T>
 void conv1d_eigen(const std::span<const T> input_,
@@ -150,10 +151,10 @@ void conv1d_eigen(const std::span<const T> input_,
 }
 
 /*
-KFR
+KFR (same mode)
 */
 template <typename T>
-void conv1d_kfr_fir(const std::span<const T> input,
+void conv1d_KFR_fir(const std::span<const T> input,
                     const std::span<const T> kernel, std::span<T> output) {
 
   auto input_ = kfr::make_univector(input.data(), input.size());
@@ -177,3 +178,41 @@ void conv1d_kfr_oa(const std::span<const T> input,
   filter.apply(output_, input_);
 }
 #endif
+
+/*
+OpenCV (same mode)
+*/
+
+template <typename T> auto spanToMat1D(const std::span<const T> &span) {
+  // Create a Mat header pointing to the data in the span
+  return cv::Mat(1, span.size(), cv::traits::Type<T>::value,
+                 const_cast<T *>(span.data()));
+}
+template <typename T> auto spanToMat1D(const std::span<T> &span) {
+  // Create a Mat header pointing to the data in the span
+  return cv::Mat(1, span.size(), cv::traits::Type<T>::value, span.data());
+}
+
+void conv1d_OpenCV(const cv::Mat &input, const cv::Mat &kernel,
+                   cv::Mat &output) {
+  // Ensure the kernel is either a single row or a single column
+  CV_Assert(kernel.rows == 1 || kernel.cols == 1);
+
+  // Use filter2D for convolution
+  int ddepth = -1; // Keep the same depth as input
+  cv::filter2D(input, output, ddepth, kernel, cv::Point(-1, -1), 0,
+               cv::BORDER_CONSTANT);
+}
+
+template <typename T>
+void conv1d_OpenCV(const std::span<const T> input,
+                   const std::span<const T> kernel, std::span<T> output) {
+  auto input_ = spanToMat1D(input);
+  auto kernel_ = spanToMat1D(kernel);
+  auto output_ = spanToMat1D(output);
+
+  // Use filter2D for convolution
+  int ddepth = -1; // Keep the same depth as input
+  cv::filter2D(input_, output_, ddepth, kernel_, cv::Point(-1, -1), 0,
+               cv::BORDER_CONSTANT);
+}

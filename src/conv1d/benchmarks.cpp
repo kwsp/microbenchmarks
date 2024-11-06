@@ -60,7 +60,7 @@ template <typename T> static void BM_conv1d_BLAS(benchmark::State &state) {
   arma::Col<T> im2col(output.size() * kernel.size());
 
   for (auto _ : state) {
-    conv1d_blas_im2col<T>(input, kernel, im2col, output);
+    conv1d_BLAS_im2col<T>(input, kernel, im2col, output);
   }
 }
 BENCHMARK(BM_conv1d_BLAS<double>)->Ranges(RANGES);
@@ -72,7 +72,7 @@ Conv1d with Accelerate
 */
 template <typename T>
 static void BM_conv1d_Accelerate_vDSP(benchmark::State &state) {
-  conv_bench_valid<T>(state, conv1d_vdsp<T>);
+  conv_bench_valid<T>(state, conv1d_vDSP<T>);
 }
 BENCHMARK(BM_conv1d_Accelerate_vDSP<double>)->Ranges(RANGES);
 
@@ -107,9 +107,15 @@ BENCHMARK(BM_conv1d_Eigen<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_KFR(benchmark::State &state) {
-  conv_bench_same<Real>(state, conv1d_kfr_fir<Real>);
+  conv_bench_same<Real>(state, conv1d_KFR_fir<Real>);
 }
 BENCHMARK(BM_conv1d_KFR<double>)->Ranges(RANGES);
+
+template <fftconv::FloatOrDouble Real>
+void BM_conv1d_OpenCV(benchmark::State &state) {
+  conv_bench_same<Real>(state, conv1d_OpenCV<Real>);
+}
+BENCHMARK(BM_conv1d_OpenCV<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv(benchmark::State &state) {
