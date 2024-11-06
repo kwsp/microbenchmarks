@@ -50,6 +50,14 @@ void conv_bench_valid(benchmark::State &state, Func conv_func) {
 }
 
 /*
+Conv1d naive
+*/
+template <typename T> static void BM_conv1d_naive(benchmark::State &state) {
+  conv_bench_valid<T>(state, conv1d_naive<T, ConvMode::Valid>);
+}
+BENCHMARK(BM_conv1d_naive<double>)->Ranges(RANGES);
+
+/*
 Conv1d with BLAS
 */
 template <typename T> static void BM_conv1d_BLAS(benchmark::State &state) {
