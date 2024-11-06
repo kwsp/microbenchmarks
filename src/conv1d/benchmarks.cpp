@@ -70,10 +70,11 @@ BENCHMARK(BM_conv1d_BLAS<double>)->Ranges(RANGES);
 /*
 Conv1d with Accelerate
 */
-template <typename T> static void BM_conv1d_vdsp(benchmark::State &state) {
+template <typename T>
+static void BM_conv1d_Accelerate_vDSP(benchmark::State &state) {
   conv_bench_valid<T>(state, conv1d_vdsp<T>);
 }
-BENCHMARK(BM_conv1d_vdsp<double>)->Ranges(RANGES);
+BENCHMARK(BM_conv1d_Accelerate_vDSP<double>)->Ranges(RANGES);
 
 #endif
 
@@ -93,10 +94,10 @@ void arma_conv_full(const std::span<const Real> span1,
 }
 
 template <fftconv::FloatOrDouble Real>
-void BM_arma_conv(benchmark::State &state) {
+void BM_conv1d_arma(benchmark::State &state) {
   conv_bench_full<Real>(state, arma_conv_full<Real>);
 }
-BENCHMARK(BM_arma_conv<double>)->Ranges(RANGES);
+BENCHMARK(BM_conv1d_arma<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv(benchmark::State &state) {
