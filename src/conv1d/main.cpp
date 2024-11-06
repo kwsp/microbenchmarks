@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[]) {
   using T = double;
+
   std::vector<T> input = {1, 2, 3, 4, 5, 6};
   std::vector<T> kernel = {1, 0, 1};
 
@@ -55,6 +56,13 @@ int main(int argc, char *argv[]) {
     std::vector<T> output(output_size_same, 0);
     conv1d_OpenCV<T>(input, kernel, output);
     fmt::println("=== OpenCV ===");
+    fmt::println("Output: {}", fmt::join(output, ", "));
+  }
+
+  {
+    std::vector<T> output(output_size_valid, 0);
+    conv1d_OpenCV_intrin<T>(input, kernel, output);
+    fmt::println("=== OpenCV (Universal Intrinsics) ===");
     fmt::println("Output: {}", fmt::join(output, ", "));
   }
 

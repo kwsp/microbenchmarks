@@ -10,6 +10,7 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <kfr/all.hpp>
+#include <opencv2/core/hal/intrin.hpp>
 #include <opencv2/opencv.hpp>
 #include <span>
 #include <type_traits>
@@ -215,4 +216,44 @@ void conv1d_OpenCV(const std::span<const T> input,
   int ddepth = -1; // Keep the same depth as input
   cv::filter2D(input_, output_, ddepth, kernel_, cv::Point(-1, -1), 0,
                cv::BORDER_CONSTANT);
+}
+
+/*
+OpenCV Universal Intrinsics
+
+https://docs.opencv.org/4.10.0/d6/dd1/tutorial_univ_intrin.html
+https://docs.opencv.org/4.x/df/d91/group__core__hal__intrin.html
+*/
+
+template <typename T>
+using cv_vector_type = typename std::conditional<
+    std::is_same_v<T, float>, cv::v_float32,
+    std::conditional_t<std::is_same_v<T, double>, cv::v_float64, void>>::type;
+
+template <typename T>
+void conv1d_OpenCV_intrin(const std::span<const T> input,
+                          const std::span<const T> kernel,
+                          std::span<T> output) {
+  // OpenCV universal intrinsics support 128-bit SIMD
+  // For 256-bit only AVX2 is supported
+  using WideFloat = cv_vector_type<T>;
+  int step = cv::VTraits<WideFloat>::vlanes();
+
+  auto *sptr = input.data();
+  auto *dptr = output.data();
+  for (int k = 0; k < kernel.size(); ++k) {
+    WideFloat kernel_wide = cv::vx_setall(kernel[k]);
+
+    int i = 0;
+    for (; i + step < input.size(); i += step) {
+      WideFloat window = cv::vx_load(sptr + i + k);
+      WideFloat sum =
+          cv::v_add(cv::vx_load(dptr + i), cv::v_mul(kernel_wide, window));
+      cv::v_store(dptr + i, sum);
+    }
+
+    for (; i < input.size(); ++i) {
+      output[i] += input[i + k] * kernel[k];
+    }
+  }
 }

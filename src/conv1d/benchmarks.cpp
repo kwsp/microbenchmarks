@@ -118,6 +118,12 @@ void BM_conv1d_OpenCV(benchmark::State &state) {
 BENCHMARK(BM_conv1d_OpenCV<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
+void BM_conv1d_OpenCV_intrin(benchmark::State &state) {
+  conv_bench_same<Real>(state, conv1d_OpenCV_intrin<Real>);
+}
+BENCHMARK(BM_conv1d_OpenCV_intrin<double>)->Ranges(RANGES);
+
+template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv(benchmark::State &state) {
   conv_bench_full<Real>(state, fftconv::convolve_fftw<Real>);
 }
