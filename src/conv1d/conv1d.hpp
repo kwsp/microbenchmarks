@@ -16,6 +16,53 @@
 #include <type_traits>
 #include <vector>
 
+enum class ConvMode { Full, Same, Valid };
+
+/*
+Naive
+*/
+template <typename T, ConvMode Mode = ConvMode::Full>
+void conv1d_naive(const std::span<const T> input,
+                  const std::span<const T> kernel, std::span<T> output) {
+  int output_size = 0;
+  int pad = 0;
+
+  if constexpr (Mode == ConvMode::Full) {
+    output_size = input.size() + kernel.size() - 1;
+    pad = kernel.size() - 1;
+  } else if constexpr (Mode == ConvMode::Same) {
+    output_size = input.size();
+    pad = (kernel.size() - 1) / 2;
+  } else if constexpr (Mode == ConvMode::Valid) {
+    output_size = input.size() - kernel.size() + 1;
+  }
+
+  // Resize output to match output_size
+  if (output.size() < output_size) {
+    throw std::invalid_argument(
+        "Output span size is too small for the selected mode");
+  }
+
+  for (int i = 0; i < output_size; ++i) {
+    output[i] = 0; // Initialize to zero
+    for (int j = 0; j < kernel.size(); ++j) {
+      int input_index;
+
+      // For "Valid" mode, adjust input index calculation to ensure no padding
+      // and full overlap only
+      if constexpr (Mode == ConvMode::Valid) {
+        input_index = i + j; // Only include fully overlapping elements
+      } else {
+        input_index = i + j - pad;
+      }
+
+      if (input_index >= 0 && input_index < input.size()) {
+        output[i] += input[input_index] * kernel[j];
+      }
+    }
+  }
+}
+
 /*
 Conv1d with BLAS using the im2col method + gemm
 "valid" mode
@@ -252,7 +299,7 @@ void conv1d_OpenCV_intrin(const std::span<const T> input,
       cv::v_store(dptr + i, sum);
     }
 
-    for (; i < input.size(); ++i) {
+    for (; i < output.size(); ++i) {
       output[i] += input[i + k] * kernel[k];
     }
   }

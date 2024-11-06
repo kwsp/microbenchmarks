@@ -5,12 +5,33 @@
 int main(int argc, char *argv[]) {
   using T = double;
 
-  std::vector<T> input = {1, 2, 3, 4, 5, 6};
-  std::vector<T> kernel = {1, 0, 1};
+  const std::vector<T> input = {1, 2, 3, 4, 5, 6, 7, 8};
+  const std::vector<T> kernel = {1, 0, 2, 1};
 
   auto output_size_valid = input.size() - kernel.size() + 1;
   auto output_size_same = input.size();
   auto output_size_full = input.size() + kernel.size() - 1;
+
+  {
+    std::vector<T> output(output_size_full, 0);
+    conv1d_naive<T, ConvMode::Full>(input, kernel, output);
+    fmt::println("=== Naive (full) ===");
+    fmt::println("Output: {}", fmt::join(output, ", "));
+  }
+
+  {
+    std::vector<T> output(output_size_same, 0);
+    conv1d_naive<T, ConvMode::Same>(input, kernel, output);
+    fmt::println("=== Naive (same) ===");
+    fmt::println("Output: {}", fmt::join(output, ", "));
+  }
+
+  {
+    std::vector<T> output(output_size_valid, 0);
+    conv1d_naive<T, ConvMode::Valid>(input, kernel, output);
+    fmt::println("=== Naive (valid) ===");
+    fmt::println("Output: {}", fmt::join(output, ", "));
+  }
 
   {
     std::vector<T> output(output_size_valid, 0);
