@@ -186,7 +186,7 @@ OpenCV (same mode)
 template <typename T> auto spanToMat1D(const std::span<const T> &span) {
   // Create a Mat header pointing to the data in the span
   return cv::Mat(1, span.size(), cv::traits::Type<T>::value,
-                 const_cast<T *>(span.data()));
+                 const_cast<T *>(span.data())); // NOLINT
 }
 template <typename T> auto spanToMat1D(const std::span<T> &span) {
   // Create a Mat header pointing to the data in the span

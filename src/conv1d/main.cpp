@@ -1,5 +1,7 @@
 #include "conv1d.hpp"
 
+// NOLINTBEGIN(*-magic-numbers)
+
 int main(int argc, char *argv[]) {
   using T = double;
   std::vector<T> input = {1, 2, 3, 4, 5, 6};
@@ -58,3 +60,5 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+// NOLINTEND(*-magic-numbers)
