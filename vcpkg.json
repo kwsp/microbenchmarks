@@ -3,11 +3,13 @@
   "name": "cpp-template",
   "version": "0.1",
   "dependencies": [
+    "fmt",
     "armadillo",
     "benchmark",
     {
       "name": "opencv",
       "features": ["tbb", "world"]
-    }
+    },
+    "openblas"
   ]
 }
