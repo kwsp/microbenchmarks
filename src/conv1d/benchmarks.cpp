@@ -60,7 +60,7 @@ template <typename T> static void BM_conv1d_BLAS(benchmark::State &state) {
   arma::Col<T> im2col(output.size() * kernel.size());
 
   for (auto _ : state) {
-    conv1d_openblas<T>(input, kernel, im2col, output);
+    conv1d_blas_im2col<T>(input, kernel, im2col, output);
   }
 }
 BENCHMARK(BM_conv1d_BLAS<double>)->Ranges(RANGES);
@@ -94,16 +94,22 @@ void arma_conv_full(const std::span<const Real> span1,
 }
 
 template <fftconv::FloatOrDouble Real>
-void BM_conv1d_arma(benchmark::State &state) {
+void BM_conv1d_Arma(benchmark::State &state) {
   conv_bench_full<Real>(state, arma_conv_full<Real>);
 }
-BENCHMARK(BM_conv1d_arma<double>)->Ranges(RANGES);
+BENCHMARK(BM_conv1d_Arma<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_Eigen(benchmark::State &state) {
   conv_bench_full<Real>(state, conv1d_eigen<Real>);
 }
 BENCHMARK(BM_conv1d_Eigen<double>)->Ranges(RANGES);
+
+template <fftconv::FloatOrDouble Real>
+void BM_conv1d_KFR(benchmark::State &state) {
+  conv_bench_same<Real>(state, conv1d_kfr_fir<Real>);
+}
+BENCHMARK(BM_conv1d_KFR<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv(benchmark::State &state) {

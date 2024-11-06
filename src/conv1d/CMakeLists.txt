@@ -1,8 +1,9 @@
 find_package(fmt CONFIG REQUIRED)
+find_package(benchmark CONFIG REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenBLAS CONFIG REQUIRED)
-find_package(benchmark CONFIG REQUIRED)
+find_package(KFR CONFIG REQUIRED)
 find_package(FFTW3 CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
 find_path(FFTCONV_INCLUDE_DIRS "fftconv.hpp")
@@ -29,7 +30,14 @@ function(add_executable_script EXE_NAME)
     Eigen3::Eigen
     FFTW3::fftw3
     FFTW3::fftw3f
+    kfr
+    kfr_dsp
   )
+  
+  if (APPLE)
+    target_link_libraries(${EXE_NAME} PRIVATE kfr_dsp_neon64)
+  endif()
+
   target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
 
 endfunction()

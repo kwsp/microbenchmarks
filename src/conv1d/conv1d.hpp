@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include <kfr/all.hpp>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -21,15 +22,14 @@ im2col_matrix must be preallocated to have size output_size * kernel_size,
 where output_size = input_size - kernel_size + 1
 */
 template <typename T>
-void conv1d_openblas(std::span<const T> input, std::span<const T> kernel,
-                     std::span<T> im2col_matrix, std::span<T> output)
+void conv1d_blas_im2col(std::span<const T> input, std::span<const T> kernel,
+                        std::span<T> im2col_matrix, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
   const int input_size = input.size();
   const int kernel_size = kernel.size();
   const int output_size = input_size - kernel_size + 1;
 
-  // Allocate memory for the im2col matrix
   // Perform im2col transformation
   for (int i = 0; i < output_size; ++i) {
     for (int j = 0; j < kernel_size; ++j) {
@@ -139,8 +139,6 @@ void conv1d_eigen(const std::span<const T> input_,
   Eigen::Map<const Eigen::VectorX<T>> kernel(kernel_.data(), kernel_.size());
   Eigen::Map<Eigen::VectorX<T>> output(output_.data(), output_.size());
 
-  auto p = input.data();
-
   const int input_size = input.size();
   const int kernel_size = kernel.size();
   const int output_size = input_size - kernel_size + 1;
@@ -150,3 +148,32 @@ void conv1d_eigen(const std::span<const T> input_,
     output(i) = input.segment(i, kernel_size).dot(kernel);
   }
 }
+
+/*
+KFR
+*/
+template <typename T>
+void conv1d_kfr_fir(const std::span<const T> input,
+                    const std::span<const T> kernel, std::span<T> output) {
+
+  auto input_ = kfr::make_univector(input.data(), input.size());
+  auto kernel_ = kfr::make_univector(kernel.data(), kernel.size());
+  auto output_ = kfr::make_univector(output.data(), output.size());
+
+  kfr::filter_fir<T> filter(kernel_);
+  filter.apply(output_, input_);
+}
+
+#ifndef __APPLE__
+template <typename T>
+void conv1d_kfr_oa(const std::span<const T> input,
+                   const std::span<const T> kernel, std::span<T> output) {
+
+  auto input_ = kfr::make_univector(input.data(), input.size());
+  auto kernel_ = kfr::make_univector(kernel.data(), kernel.size());
+  auto output_ = kfr::make_univector(output.data(), output.size());
+
+  kfr::convolve_filter<T> filter(kernel_);
+  filter.apply(output_, input_);
+}
+#endif
