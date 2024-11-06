@@ -100,6 +100,12 @@ void BM_conv1d_arma(benchmark::State &state) {
 BENCHMARK(BM_conv1d_arma<double>)->Ranges(RANGES);
 
 template <fftconv::FloatOrDouble Real>
+void BM_conv1d_Eigen(benchmark::State &state) {
+  conv_bench_full<Real>(state, conv1d_eigen<Real>);
+}
+BENCHMARK(BM_conv1d_Eigen<double>)->Ranges(RANGES);
+
+template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv(benchmark::State &state) {
   conv_bench_full<Real>(state, fftconv::convolve_fftw<Real>);
 }

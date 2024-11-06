@@ -6,6 +6,7 @@
 #include <cblas.h>
 #endif
 
+#include <Eigen/Dense>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <span>
@@ -24,9 +25,9 @@ void conv1d_openblas(std::span<const T> input, std::span<const T> kernel,
                      std::span<T> im2col_matrix, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
-  int input_size = input.size();
-  int kernel_size = kernel.size();
-  int output_size = input_size - kernel_size + 1;
+  const int input_size = input.size();
+  const int kernel_size = kernel.size();
+  const int output_size = input_size - kernel_size + 1;
 
   // Allocate memory for the im2col matrix
   // Perform im2col transformation
@@ -64,12 +65,12 @@ void conv1d_openblas_same(std::span<const T> input, std::span<const T> kernel,
                           std::span<T> im2col_matrix, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
-  int input_size = input.size();
-  int kernel_size = kernel.size();
+  const int input_size = input.size();
+  const int kernel_size = kernel.size();
 
   // Calculate the required padding for "same" mode
-  int padding = (kernel_size - 1) / 2;
-  int padded_size = input_size + 2 * padding;
+  const int padding = (kernel_size - 1) / 2;
+  const int padded_size = input_size + 2 * padding;
 
   // Create a padded input
   std::vector<T> padded_input(padded_size, 0.0F);
@@ -78,7 +79,7 @@ void conv1d_openblas_same(std::span<const T> input, std::span<const T> kernel,
   }
 
   // The output size will be the same as the original input size
-  int output_size = input_size;
+  const int output_size = input_size;
 
   // Perform im2col transformation on the padded input
   for (int i = 0; i < output_size; ++i) {
@@ -114,9 +115,9 @@ void conv1d_vdsp(const std::span<const T> input,
                  const std::span<const T> kernel, std::span<T> output)
   requires(std::is_floating_point_v<T>)
 {
-  int input_size = input.size();
-  int kernel_size = kernel.size();
-  int output_size = input_size - kernel_size + 1;
+  const int input_size = input.size();
+  const int kernel_size = kernel.size();
+  const int output_size = input_size - kernel_size + 1;
 
   if constexpr (std::is_same_v<T, float>) {
     vDSP_conv(input.data(), 1, kernel.data(), 1, output.data(), 1, output_size,
@@ -127,3 +128,25 @@ void conv1d_vdsp(const std::span<const T> input,
   }
 }
 #endif
+
+/*
+Eigen
+*/
+template <typename T>
+void conv1d_eigen(const std::span<const T> input_,
+                  const std::span<const T> kernel_, std::span<T> output_) {
+  Eigen::Map<const Eigen::VectorX<T>> input(input_.data(), input_.size());
+  Eigen::Map<const Eigen::VectorX<T>> kernel(kernel_.data(), kernel_.size());
+  Eigen::Map<Eigen::VectorX<T>> output(output_.data(), output_.size());
+
+  auto p = input.data();
+
+  const int input_size = input.size();
+  const int kernel_size = kernel.size();
+  const int output_size = input_size - kernel_size + 1;
+
+  // Perform the 1D convolution
+  for (int i = 0; i < output_size; ++i) {
+    output(i) = input.segment(i, kernel_size).dot(kernel);
+  }
+}

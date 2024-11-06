@@ -27,5 +27,13 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+  {
+    std::fill(output.begin(), output.end(), 0);
+    conv1d_eigen<T>(input, kernel, output);
+    // auto output = conv1d_openblas_same<T>(input, kernel);
+    fmt::println("=== Eigen ===");
+    fmt::println("Output: {}", fmt::join(output, ", "));
+  }
+
   return 0;
 }

@@ -1,5 +1,6 @@
 find_package(fmt CONFIG REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenBLAS CONFIG REQUIRED)
 find_package(benchmark CONFIG REQUIRED)
 find_package(FFTW3 CONFIG REQUIRED)
@@ -13,14 +14,6 @@ function(add_executable_script EXE_NAME)
       CXX_EXTENSIONS OFF
   )
 
-  target_link_libraries(${EXE_NAME} PRIVATE
-    fmt::fmt
-    armadillo
-    FFTW3::fftw3
-    FFTW3::fftw3f
-  )
-  target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
-
   if (APPLE)
     # Use Accelerate
     target_compile_definitions(${EXE_NAME} PRIVATE -DACCELERATE_NEW_LAPACK)
@@ -29,6 +22,15 @@ function(add_executable_script EXE_NAME)
     # Use OpenBLAS
     target_link_libraries(${EXE_NAME} PRIVATE OpenBLAS::OpenBLAS)
   endif()
+
+  target_link_libraries(${EXE_NAME} PRIVATE
+    fmt::fmt
+    armadillo
+    Eigen3::Eigen
+    FFTW3::fftw3
+    FFTW3::fftw3f
+  )
+  target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
 
 endfunction()
 

@@ -5,6 +5,7 @@
   "dependencies": [
     "fmt",
     "armadillo",
+    "eigen3",
     "benchmark",
     {
       "name": "opencv",
@@ -21,6 +22,7 @@
       "features": ["threads"]
     },
     "fftconv",
-    "openblas"
+    "openblas",
+    "kfr"
   ]
 }
