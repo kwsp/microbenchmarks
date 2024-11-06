@@ -1,10 +1,13 @@
 find_package(fmt CONFIG REQUIRED)
+find_package(Armadillo REQUIRED)
 find_package(OpenBLAS CONFIG REQUIRED)
 find_package(benchmark CONFIG REQUIRED)
+find_package(FFTW3 CONFIG REQUIRED)
+find_package(FFTW3f CONFIG REQUIRED)
+find_path(FFTCONV_INCLUDE_DIRS "fftconv.hpp")
 
 function(add_executable_script EXE_NAME)
   add_executable(${EXE_NAME} ${ARGN})
-
   set_target_properties(${EXE_NAME} PROPERTIES
       CXX_STANDARD 20
       CXX_EXTENSIONS OFF
@@ -12,7 +15,11 @@ function(add_executable_script EXE_NAME)
 
   target_link_libraries(${EXE_NAME} PRIVATE
     fmt::fmt
+    armadillo
+    FFTW3::fftw3
+    FFTW3::fftw3f
   )
+  target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
 
   if (APPLE)
     # Use Accelerate

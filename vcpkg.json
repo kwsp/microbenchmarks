@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "cpp-template",
+  "name": "microbenchmarks",
   "version": "0.1",
   "dependencies": [
     "fmt",
@@ -10,6 +10,17 @@
       "name": "opencv",
       "features": ["tbb", "world"]
     },
+    {
+      "name": "fftw3",
+      "platform": "x64",
+      "features": ["avx2", "threads"]
+    },
+    {
+      "name": "fftw3",
+      "platform": "!x64",
+      "features": ["threads"]
+    },
+    "fftconv",
     "openblas"
   ]
 }
