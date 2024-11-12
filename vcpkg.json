@@ -9,7 +9,7 @@
     "benchmark",
     {
       "name": "opencv",
-      "features": ["tbb", "world"]
+      "features": ["tbb", "ipp", "world"]
     },
     {
       "name": "fftw3",
