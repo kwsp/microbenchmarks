@@ -9,7 +9,13 @@
     "benchmark",
     {
       "name": "opencv",
+      "platform": "x64",
       "features": ["tbb", "ipp", "world"]
+    },
+    {
+      "name": "opencv",
+      "platform": "!x64",
+      "features": ["tbb", "world"]
     },
     {
       "name": "fftw3",
