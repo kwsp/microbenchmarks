@@ -213,19 +213,18 @@ void conv1d_KFR_fir(const std::span<const T> input,
   filter.apply(output_, input_);
 }
 
-#ifndef __APPLE__
-template <typename T>
-void conv1d_kfr_oa(const std::span<const T> input,
-                   const std::span<const T> kernel, std::span<T> output) {
-
-  auto input_ = kfr::make_univector(input.data(), input.size());
-  auto kernel_ = kfr::make_univector(kernel.data(), kernel.size());
-  auto output_ = kfr::make_univector(output.data(), output.size());
-
-  kfr::convolve_filter<T> filter(kernel_);
-  filter.apply(output_, input_);
-}
-#endif
+// Link error
+// #ifndef __APPLE__
+// template <typename T>
+// void conv1d_kfr_oa(const std::span<const T> input,
+//                    const std::span<const T> kernel, std::span<T> output) {
+//   auto input_ = kfr::make_univector(input.data(), input.size());
+//   auto kernel_ = kfr::make_univector(kernel.data(), kernel.size());
+//   auto output_ = kfr::make_univector(output.data(), output.size());
+//   kfr::convolve_filter<T> filter(kernel_);
+//   filter.apply(output_, input_);
+// }
+// #endif
 
 /*
 OpenCV (same mode)
@@ -299,7 +298,7 @@ void conv1d_OpenCV_intrin(const std::span<const T> input,
       cv::v_store(dptr + i, sum);
     }
 
-    for (; i < output.size(); ++i) {
+    for (; (i < output.size()) && ((i + k) < input.size()); ++i) {
       output[i] += input[i + k] * kernel[k];
     }
   }

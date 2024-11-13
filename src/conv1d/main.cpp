@@ -64,14 +64,14 @@ int main(int argc, char *argv[]) {
     fmt::println("Output: {}", fmt::join(output, ", "));
   }
 
-#ifndef __APPLE__
-  {
-    std::vector<T> output(output_size_same, 0);
-    conv1d_kfr_oa<T>(input, kernel, output);
-    fmt::println("=== KFR (oa) ===");
-    fmt::println("Output: {}", fmt::join(output, ", "));
-  }
-#endif
+  // #ifndef __APPLE__
+  //   {
+  //     std::vector<T> output(output_size_same, 0);
+  //     conv1d_kfr_oa<T>(input, kernel, output);
+  //     fmt::println("=== KFR (oa) ===");
+  //     fmt::println("Output: {}", fmt::join(output, ", "));
+  //   }
+  // #endif
 
   {
     std::vector<T> output(output_size_same, 0);
