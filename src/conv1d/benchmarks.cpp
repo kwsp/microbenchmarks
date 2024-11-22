@@ -2,12 +2,16 @@
 #include <armadillo>
 #include <benchmark/benchmark.h>
 #include <fftconv.hpp>
+#include <fftw.hpp>
 #include <utility>
 #include <vector>
 
 // // NOLINTNEXTLIE(*-magic-numbers)
 // const std::vector<std::pair<int64_t, int64_t>> RANGES{
 //     {{2 << 7, 2 << 12}, {15, 95}}};
+
+static void DoSetup(const benchmark::State &) { fftw::import_wisdom(); }
+static void DoTeardown(const benchmark::State &) { fftw::export_wisdom(); }
 
 // NOLINTNEXTLIE(*-magic-numbers)
 const std::vector<std::pair<int64_t, int64_t>> RANGES{
@@ -135,18 +139,27 @@ template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv(benchmark::State &state) {
   conv_bench_full<Real>(state, fftconv::convolve_fftw<Real>);
 }
-BENCHMARK(BM_conv1d_fftconv<double>)->Ranges(RANGES);
+BENCHMARK(BM_conv1d_fftconv<double>)
+    ->Ranges(RANGES)
+    ->Setup(DoSetup)
+    ->Teardown(DoTeardown);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv_oa(benchmark::State &state) {
   conv_bench_full<Real>(state, fftconv::oaconvolve_fftw<Real>);
 }
-BENCHMARK(BM_conv1d_fftconv_oa<double>)->Ranges(RANGES);
+BENCHMARK(BM_conv1d_fftconv_oa<double>)
+    ->Ranges(RANGES)
+    ->Setup(DoSetup)
+    ->Teardown(DoTeardown);
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_fftconv_oa_same(benchmark::State &state) {
   conv_bench_same<Real>(state, fftconv::oaconvolve_fftw_same<Real>);
 }
-BENCHMARK(BM_conv1d_fftconv_oa_same<double>)->Ranges(RANGES);
+BENCHMARK(BM_conv1d_fftconv_oa_same<double>)
+    ->Ranges(RANGES)
+    ->Setup(DoSetup)
+    ->Teardown(DoTeardown);
 
 BENCHMARK_MAIN();
