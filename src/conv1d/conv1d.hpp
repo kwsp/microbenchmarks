@@ -1,11 +1,5 @@
 #pragma once
 
-#ifdef __APPLE__
-#include <Accelerate/Accelerate.h>
-#else
-#include <cblas.h>
-#endif
-
 #include <Eigen/Dense>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -15,6 +9,126 @@
 #include <span>
 #include <type_traits>
 #include <vector>
+
+#ifdef __APPLE__
+#include <Accelerate/Accelerate.h>
+#else
+#include <cblas.h>
+#endif
+
+// Intel IPP
+#ifdef CONV1D_HAS_IPP
+#include <ipp.h>
+
+inline void get_ipp_version() {
+  const auto *const lib = ippsGetLibVersion();
+  fmt::println("\nIPP version\t{}.{}", lib->major, lib->minor);
+  fmt::println("IPP majorBuild\t{}", lib->majorBuild);
+  fmt::println("IPP build\t{}", lib->build);
+  fmt::println("IPP targetCpu\t{}", lib->targetCpu);
+  fmt::println("IPP Name\t{}", lib->Name);
+  fmt::println("IPP Version\t{}", lib->Version);
+  fmt::println("IPP BuildDate\t{}\n", lib->BuildDate);
+
+  IppStatus status{};
+  Ipp64u cpuFeatures{};
+  Ipp64u enabledFeatures{};
+
+  status = ippGetCpuFeatures(&cpuFeatures, nullptr);
+  if (status != ippStsNoErr) {
+    return;
+  }
+  enabledFeatures = ippGetEnabledCpuFeatures();
+
+  const auto printInfo = [cpuFeatures, enabledFeatures](int feature,
+                                                        const char *name) {
+    fmt::println("{}\t{}\t{}", name, (feature & cpuFeatures) ? 'Y' : 'N',
+                 (feature & enabledFeatures) ? 'Y' : 'N');
+  };
+
+  fmt::println("Features supported by CPU\tby Intel IPP");
+  fmt::println("------------------------------------------");
+  printInfo(ippCPUID_MMX, "MXX");
+  printInfo(ippCPUID_SSE, "SSE");
+  printInfo(ippCPUID_SSE2, "SSE2");
+  printInfo(ippCPUID_SSE3, "SSE3");
+  printInfo(ippCPUID_SSSE3, "SSSE3");
+  printInfo(ippCPUID_MOVBE, "MOVBE");
+  printInfo(ippCPUID_SSE41, "SSE41");
+  printInfo(ippCPUID_SSE42, "SSE42");
+  printInfo(ippCPUID_AVX, "AVX");
+  printInfo(ippAVX_ENABLEDBYOS, "AVX enabled");
+  printInfo(ippCPUID_AES, "AES");
+  printInfo(ippCPUID_CLMUL, "CLMUL");
+  printInfo(ippCPUID_RDRAND, "RDRAND");
+  printInfo(ippCPUID_F16C, "F16C");
+  printInfo(ippCPUID_AVX2, "AVX2");
+  printInfo(ippCPUID_ADCOX, "ADCOX");
+  printInfo(ippCPUID_RDSEED, "RDSEED");
+  printInfo(ippCPUID_PREFETCHW, "PREFETCHW");
+  printInfo(ippCPUID_SHA, "SHA");
+  if (ippAVX512_ENABLEDBYOS & cpuFeatures) {
+    printInfo(ippCPUID_AVX512F, "AVX512F");
+    printInfo(ippCPUID_AVX512CD, "AVX512CD");
+    printInfo(ippCPUID_AVX512ER, "AVX512ER");
+    printInfo(ippCPUID_AVX512PF, "AVX512PF");
+    printInfo(ippCPUID_AVX512BW, "AVX512BW");
+    printInfo(ippCPUID_AVX512VL, "AVX512VL");
+    printInfo(ippCPUID_AVX512VBMI, "AVX512VBMI");
+    printInfo(ippCPUID_MPX, "MPX");
+    printInfo(ippCPUID_AVX512_4FMADDPS, "AVX512_4FMADDPS");
+    printInfo(ippCPUID_AVX512_4VNNIW, "AVX512_4VNNIW");
+    printInfo(ippCPUID_KNC, "KNC");
+    printInfo(ippCPUID_AVX512IFMA, "AVX512IFMA");
+    printInfo(ippAVX512_ENABLEDBYOS, "AVX512 enabled");
+  }
+
+  fmt::println("\n");
+}
+
+template <typename T, IppAlgType algType = IppAlgType::ippAlgDirect>
+void conv1d_IPP(const std::span<const T> input, const std::span<const T> kernel,
+                std::span<T> output) {
+  IppStatus status{};
+  IppDataType dataType{};
+
+  int bufSizeWant{};
+  static thread_local int bufSize{};
+  static thread_local Ipp8u *pBuffer{};
+
+  if constexpr (std::is_same_v<T, float>) {
+    dataType = IppDataType::ipp32f;
+  } else if constexpr (std::is_same_v<T, double>) {
+    dataType = IppDataType::ipp64f;
+  } else {
+    static_assert(std::is_same_v<T, float>, "Unsupported type");
+  }
+
+  status = ippsConvolveGetBufferSize(input.size(), kernel.size(), dataType,
+                                     algType, &bufSizeWant);
+  if (status != ippStsNoErr) {
+    return;
+  }
+
+  // Only allocate buffer if current size different from existing size
+  if (bufSizeWant != bufSize) {
+    if (pBuffer != nullptr) {
+      ippsFree(pBuffer);
+    }
+    pBuffer = ippsMalloc_8u(bufSizeWant);
+    bufSize = bufSizeWant;
+  }
+
+  if constexpr (std::is_same_v<T, float>) {
+    status = ippsConvolve_32f(input.data(), input.size(), kernel.data(),
+                              kernel.size(), output.data(), algType, pBuffer);
+  } else if constexpr (std::is_same_v<T, double>) {
+    status = ippsConvolve_64f(input.data(), input.size(), kernel.data(),
+                              kernel.size(), output.data(), algType, pBuffer);
+  }
+}
+
+#endif
 
 enum class ConvMode { Full, Same, Valid };
 

@@ -9,6 +9,11 @@ find_package(FFTW3f CONFIG REQUIRED)
 find_package(OpenCV CONFIG REQUIRED)
 find_path(FFTCONV_INCLUDE_DIRS "fftconv.hpp")
 
+find_package(IPP CONFIG)
+if (IPP_FOUND)
+  message("Found Intel IPP")
+endif()
+
 function(add_executable_script EXE_NAME)
   add_executable(${EXE_NAME} ${ARGN})
   set_target_properties(${EXE_NAME} PROPERTIES
@@ -35,6 +40,11 @@ function(add_executable_script EXE_NAME)
     kfr_dsp
     opencv_world
   )
+
+  if (IPP_FOUND)
+    target_link_libraries(${EXE_NAME} PRIVATE ${IPP_LIBRARIES})
+    target_compile_definitions(${EXE_NAME} PRIVATE -DCONV1D_HAS_IPP)
+  endif()
   
   if (APPLE)
     target_link_libraries(${EXE_NAME} PRIVATE kfr_dsp_neon64)

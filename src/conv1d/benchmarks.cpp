@@ -149,4 +149,20 @@ void BM_conv1d_fftconv_oa_same(benchmark::State &state) {
 }
 BENCHMARK(BM_conv1d_fftconv_oa_same<double>)->Ranges(RANGES);
 
+#ifdef CONV1D_HAS_IPP
+
+template <fftconv::FloatOrDouble Real>
+void BM_conv1d_ipp_full_direct(benchmark::State &state) {
+  conv_bench_full<Real>(state, conv1d_IPP<Real, IppAlgType::ippAlgDirect>);
+}
+BENCHMARK(BM_conv1d_ipp_full_direct<double>)->Ranges(RANGES);
+
+template <fftconv::FloatOrDouble Real>
+void BM_conv1d_ipp_full_fft(benchmark::State &state) {
+  conv_bench_full<Real>(state, conv1d_IPP<Real, IppAlgType::ippAlgFFT>);
+}
+BENCHMARK(BM_conv1d_ipp_full_fft<double>)->Ranges(RANGES);
+
+#endif
+
 BENCHMARK_MAIN();
