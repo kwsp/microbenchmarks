@@ -25,3 +25,5 @@ BM_conv1d_fftconv<double>/4096/65              22759 ns        10672 ns        7
 BM_conv1d_fftconv_oa<double>/4096/65            9849 ns         5000 ns       100000
 BM_conv1d_fftconv_oa_same<double>/4096/65      10183 ns         4785 ns       160000
 ```
+
+![](<./Conv1d%20Throughput%2013th%20Gen%20Intel(R)%20Core(TM)%20i9-13900K.svg>)
