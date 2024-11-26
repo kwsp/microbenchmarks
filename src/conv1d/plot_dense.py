@@ -8,7 +8,7 @@ import os
 import cpuinfo
 
 cpu_info = cpuinfo.get_cpu_info()
-cpu = cpu_info["brand_raw"]
+cpu: str = cpu_info["brand_raw"]
 print(cpu)
 
 
@@ -45,7 +45,7 @@ def benchmark_parse_parameters(benchmark: pd.DataFrame) -> pd.DataFrame:
 if os.name == "nt":
     path = "./../../build/cl/src/conv1d/Release/output_dense.json"
 else:
-    ...
+    path = "../../build/clang/src/conv1d/Release/output_dense.json"
 
 with open(path, "r") as fp:
     d = json.load(fp)
@@ -58,9 +58,7 @@ benchmarks = benchmark_parse_parameters(benchmarks)
 benchmarks.head()
 
 # %%
-
 bar_width = 0.2
-f, ax = plt.subplots()
 x = np.arange(len(benchmarks["param_1"].unique()))
 benchmark_groups = {name: df for name, df in benchmarks.groupby("func_name")}
 
@@ -82,42 +80,11 @@ benchmark_groups = {name: df for name, df in benchmarks.groupby("func_name")}
 colors = []
 # labels = keys
 
-param_2 = 165
-
-# for i, (name, df) in enumerate(benchmark_groups.items()):
-#     df = df[df["param_2"] == param_2]
-#     xdata = x + i * bar_width  # bar position
-#     # ydata = df["real_time"] / 1000
-#     ydata = df["throughput"] * 1e-6
-#     # label = labels[i]
-#     label = name.split("_", 1)[1].split("<", 1)[0]
-#     ax.bar(xdata, ydata, width=bar_width, label=label)
-#     # ax.bar(xdata, ydata, width=bar_width, label=name)
-# ax.set_xticks(x + (len(benchmark_groups) - 1) / 2 * bar_width)
-# ax.set_xticklabels(df["param_1"])
-
-for i, (name, df) in enumerate(benchmark_groups.items()):
-    df = df[df["param_2"] == param_2]
-    xdata = df["param_1"]
-    ydata = df["real_time"] / 1000
-    # ydata = df["throughput"] * 1e-6
-    # label = labels[i]
-    label = name.split("_", 1)[1].split("<", 1)[0]
-    ax.scatter(xdata, ydata, label=label, marker="x")
-    ax.plot(xdata, ydata)
+param_2 = 245
 
 
-ax.set_ylabel("Real time ($\mu s$)")
-# ax.set_ylabel("Throughput (MS / s)")
-# ax.set_yscale("log")
-
-ax.set_title(f"Convolution (kernel size = {param_2})")
-ax.set_xlabel("N")
-f.tight_layout()
-f.savefig("dense2_nolegend.png")
-ax.legend()
-f.savefig("dense2.png")
-
+# %%
+benchmarks["param_1"].unique()
 
 # %%
 from tqdm import tqdm
@@ -125,46 +92,63 @@ import numpy as np
 import timeit
 
 
-def measure_func_throughput_np(func: callable, N: int, k: int, iterations=10000):
-    kernel = np.random.random(k)
-    arr = np.random.random(N)
-    func(arr, kernel)
-    time = timeit.timeit(lambda: func(arr, kernel), number=iterations) / iterations
-    throughput = N / time
-    return throughput
+def measure_func_throughput_np(
+    func: callable, N: int | list[int], k: int, iterations=10000
+):
+    if isinstance(N, (int, np.integer)):
+        kernel = np.random.random(k)
+        arr = np.random.random(N)
+        func(arr, kernel)
+        time = timeit.timeit(lambda: func(arr, kernel), number=iterations) / iterations
+        throughput = N / time
+        return throughput
+    else:
+        return np.array([measure_func_throughput_np(func, n, param_2) for n in tqdm(N)])
 
+
+xdata = benchmarks["param_1"].unique()
 
 # %%
-numpy_throughputs = [
-    measure_func_throughput_np(np.convolve, N, param_2) for N in tqdm(xdata.array)
-]
+numpy_throughputs = measure_func_throughput_np(np.convolve, xdata, param_2)
 numpy_throughputs
 
 # %%
 import scipy as sp
 from scipy import signal
 
-scipy_throughputs = [
-    measure_func_throughput_np(signal.convolve, N, param_2) for N in tqdm(xdata.array)
-]
+scipy_throughputs = measure_func_throughput_np(signal.convolve, xdata, param_2)
 scipy_throughputs
 
 # %%
+scipy_fft_throughputs = measure_func_throughput_np(signal.fftconvolve, xdata, param_2)
+scipy_fft_throughputs
+
+# %%
+scipy_oa_throughputs = measure_func_throughput_np(signal.oaconvolve, xdata, param_2)
+scipy_oa_throughputs
+
+# %%
 import torch
+import torch.nn.functional as F
 
 
 def measure_func_throughput_torch(func: callable, N: int, k: int, iterations=10000):
-    kernel = torch.rand((1, 1, k), dtype=torch.float64)
-    arr = torch.rand((1, 1, N), dtype=torch.float64)
-    time = timeit.timeit(lambda: func(arr, kernel), number=iterations) / iterations
-    throughput = N / time
-    return throughput
+    if isinstance(N, (int, np.integer)):
+        kernel = torch.rand((1, 1, k), dtype=torch.float64)
+        arr = torch.rand((1, 1, N), dtype=torch.float64)
+        with torch.no_grad():
+            time = (
+                timeit.timeit(lambda: func(arr, kernel), number=iterations) / iterations
+            )
+        throughput = N / time
+        return throughput
+    else:
+        return np.array(
+            [measure_func_throughput_torch(func, n, param_2) for n in tqdm(N)]
+        )
 
 
-torch_throughputs = [
-    measure_func_throughput_torch(torch.nn.functional.conv1d, N, param_2)
-    for N in tqdm(xdata.array)
-]
+torch_throughputs = measure_func_throughput_torch(F.conv1d, xdata, param_2)
 torch_throughputs
 
 
@@ -180,11 +164,15 @@ for i, (name, df) in enumerate(benchmark_groups.items()):
     throughputs_std.append(np.std(throughput))
 
 torch_version = torch.__version__.split("+")[0]
-for name, throughput in [
+python_lib_throughputs = [
     (f"Numpy {np.__version__}", numpy_throughputs),
     (f"Scipy {sp.__version__}", scipy_throughputs),
+    (f"Scipy {sp.__version__} (fft)", scipy_fft_throughputs),
+    (f"Scipy {sp.__version__} (oa)", scipy_oa_throughputs),
     (f"PyTorch {torch_version}", torch_throughputs),
-]:
+]
+
+for name, throughput in python_lib_throughputs:
     throughput = np.array(throughput) * 1e-6
 
     names.append(name)
@@ -199,6 +187,7 @@ REPLACE = {
     "Arma": "Armadillo",
     "Eigen": "Eigen3",
     "BLAS": "BLAS (im2col)",
+    "Accelerate_vDSP": "Apple Accelerate",
 }
 
 
@@ -229,15 +218,65 @@ rects[fftconv_idx].set_color("tab:green")
 ax.set_yticks(x, labels=names)
 ax.tick_params(left=False)
 ax.set_xlabel("Throughput (MS/s)")
-ax.set_xlim(None, 650)
-title = f"CPU 1D Convolution\nN = {set(xdata)}\nk = {param_2}"
+ax.set_xlim(None, 250)
+title = f"CPU 1D Convolution\nN = {xdata.tolist()}\nk = {param_2}"
 title = cpu + "\n" + title
 ax.set_title(title)
 
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 f.tight_layout()
-f.savefig(f"Conv1d Throughput {cpu}.svg")
+f.savefig(f"Conv1d Throughput Bar (k={param_2}) {cpu}.svg")
+
+
+# %%
+f, ax = plt.subplots()
+
+# for i, (name, df) in enumerate(benchmark_groups.items()):
+#     df = df[df["param_2"] == param_2]
+#     xdata = x + i * bar_width  # bar position
+#     # ydata = df["real_time"] / 1000
+#     ydata = df["throughput"] * 1e-6
+#     # label = labels[i]
+#     label = name.split("_", 1)[1].split("<", 1)[0]
+#     ax.bar(xdata, ydata, width=bar_width, label=label)
+#     # ax.bar(xdata, ydata, width=bar_width, label=name)
+# ax.set_xticks(x + (len(benchmark_groups) - 1) / 2 * bar_width)
+# ax.set_xticklabels(df["param_1"])
+
+for i, (name, df) in enumerate(benchmark_groups.items()):
+    df = df[df["param_2"] == param_2]
+    xdata = df["param_1"]
+    # ydata = df["real_time"] / 1000
+    ydata = df["throughput"] * 1e-6
+    # label = labels[i]
+    name = name.split("_", 1)[1].split("<", 1)[0]
+    label = replace_name(name)
+    ax.scatter(xdata, ydata, label=label, marker="x")
+    ax.plot(xdata, ydata)
+
+for name, throughputs in python_lib_throughputs:
+    ydata = throughputs * 1e-6
+    ax.scatter(xdata, ydata, label=name, marker="x")
+    ax.plot(xdata, ydata)
+
+
+# ax.set_ylabel("Real time ($\mu s$)")
+ax.set_ylabel("Throughput (MS / s)")
+# ax.set_yscale("log")
+
+title = f"Convolution (kernel size = {param_2})"
+title = cpu + "\n" + title
+ax.set_title(title)
+ax.set_xlabel("N")
+f.tight_layout()
+f.savefig(f"dense2_nolegend {cpu}.png")
+
+idx_rev = idx[::-1]
+handles, labels = ax.get_legend_handles_labels()
+ax.legend([handles[i] for i in idx_rev], [labels[i] for i in idx_rev])
+
+f.savefig(f"Conv1d Throughput Line (k={param_2}) {cpu}.svg")
 
 
 # %%
