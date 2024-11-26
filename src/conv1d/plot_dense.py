@@ -80,7 +80,7 @@ benchmark_groups = {name: df for name, df in benchmarks.groupby("func_name")}
 colors = []
 # labels = keys
 
-param_2 = 245
+param_2 = 165
 
 
 # %%
@@ -218,7 +218,7 @@ rects[fftconv_idx].set_color("tab:green")
 ax.set_yticks(x, labels=names)
 ax.tick_params(left=False)
 ax.set_xlabel("Throughput (MS/s)")
-ax.set_xlim(None, 250)
+ax.set_xlim(None, 600)
 title = f"CPU 1D Convolution\nN = {xdata.tolist()}\nk = {param_2}"
 title = cpu + "\n" + title
 ax.set_title(title)
