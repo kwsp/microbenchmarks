@@ -22,6 +22,8 @@ Kernel size = 245
 
 Compiler: MSVC 19.40.33812
 
+*Note: This CPU supports AVX512 but FFTW3 built from VCPKG only supports up to AVX2*
+
 Kernel size = 165
 
 <p align="center">
