@@ -64,6 +64,7 @@ void conv_bench_full(benchmark::State &state, Func conv_func) {
   arma::Col<T> kernel(state.range(1), arma::fill::randn);
   arma::Col<T> output(input.size() + kernel.size() - 1);
 
+  conv_func(input, kernel, output);
   for (auto _ : state) {
     conv_func(input, kernel, output);
   }
@@ -75,6 +76,7 @@ void conv_bench_same(benchmark::State &state, Func conv_func) {
   arma::Col<T> kernel(state.range(1), arma::fill::randn);
   arma::Col<T> output(input.size());
 
+  conv_func(input, kernel, output);
   for (auto _ : state) {
     conv_func(input, kernel, output);
   }
@@ -86,6 +88,7 @@ void conv_bench_valid(benchmark::State &state, Func conv_func) {
   arma::Col<T> kernel(state.range(1), arma::fill::randn);
   arma::Col<T> output(input.size() - kernel.size() + 1);
 
+  conv_func(input, kernel, output);
   for (auto _ : state) {
     conv_func(input, kernel, output);
   }
