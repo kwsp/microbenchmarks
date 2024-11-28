@@ -1,6 +1,9 @@
 compile_commands.json
 build/
 
+# FFTW wisdom
+.fftw*
+
 # Prerequisites
 *.d
 

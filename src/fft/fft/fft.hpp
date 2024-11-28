@@ -4,6 +4,10 @@
 #include <iostream>
 #include <span>
 
+#ifdef __APPLE__
+#include <Accelerate/Accelerate.h>
+#endif
+
 // Intel IPP
 #ifdef IPP_FOUND
 

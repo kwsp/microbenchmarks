@@ -55,3 +55,12 @@ add_executable_script(fft main.cpp)
 
 add_executable_script(fft_benchmarks benchmarks.cpp)
 target_link_libraries(fft_benchmarks PRIVATE benchmark::benchmark benchmark::benchmark_main)
+
+
+enable_testing()
+add_executable_script(fft_test test/fft_test.cpp)
+find_package(GTest CONFIG REQUIRED)
+target_link_libraries(fft_test PRIVATE
+  GTest::gtest
+  GTest::gtest_main
+)
