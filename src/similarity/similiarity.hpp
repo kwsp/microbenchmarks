@@ -105,6 +105,53 @@ cosine_similarity_avx2_cycle:
 
 #endif
 
+#if defined(__ARM_NEON__)
+
+#include <arm_neon.h>
+
+double cos_normalize_f64_neon(double ab, double a2, double b2) {
+  if (ab == 0) return 0;
+  if (a2 == 0 || b2 == 0) return 1;
+
+  double squares_arr[2] = {a2, b2};
+  float64x2_t squares = vld1q_f64(squares_arr);
+
+  // Arm NEON manuals don't explicitly mention the accuracy of `rsqrt`
+  // Third party results suggests its less accurate than SSE errors (1.5*2^-12).
+  // Use Newton-Raphson refinement
+  float64x2_t rsqrts = vrsqrteq_f64(squares);
+  // 2 rounds of Newton-Raphson refinement
+  rsqrts = vmulq_f64(rsqrts, vrsqrtsq_f64(vmulq_f64(squares, rsqrts), rsqrts));
+  rsqrts = vmulq_f64(rsqrts, vrsqrtsq_f64(vmulq_f64(squares, rsqrts), rsqrts));
+  vst1q_f64(squares_arr, rsqrts);
+  double result = 1 - ab * squares_arr[0] * squares_arr[1];
+  return result > 0 ? result : 0;
+}
+
+inline double cosine_similarity_neon(float const *a, float const *b, size_t n) {
+  float32x4_t ab_vec = vdupq_n_f32(0);
+  float32x4_t a2_vec = vdupq_n_f32(0), b2_vec = vdupq_n_f32(0);
+  size_t i = 0;
+  constexpr size_t n_step = 128 / 32;
+  for (; i + n_step <= n; i += n_step) {
+    float32x4_t a_vec = vld1q_f32(a + i);
+    float32x4_t b_vec = vld1q_f32(b + i);
+    ab_vec = vfmaq_f32(a_vec, b_vec, ab_vec);
+    a2_vec = vfmaq_f32(a_vec, a_vec, a2_vec);
+    b2_vec = vfmaq_f32(b_vec, b_vec, b2_vec);
+  }
+  float ab = vaddvq_f32(ab_vec);
+  float a2 = vaddvq_f32(a2_vec), b2 = vaddvq_f32(b2_vec);
+  for (; i < n; ++i) {
+    float ai = a[i], bi = b[i];
+    ab += ai * bi, a2 += ai * ai, b2 += bi * bi;
+  }
+
+  return cos_normalize_f64_neon(ab, a2, b2);
+}
+
+#endif
+
 // NOLINTEND(*-isolate-declaration, *-pointer-arithmetic)
 
 #include <Eigen/Dense>

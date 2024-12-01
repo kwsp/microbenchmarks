@@ -32,21 +32,23 @@ BM_similarity_Arma/16382        30518 ns        29576 ns        28000
 Unable to determine clock rate from sysctl: hw.cpufrequency: No such file or directory
 This does not affect benchmark measurements, only the metadata output.
 ***WARNING*** Failed to set thread affinity. Estimated CPU frequency may be incorrect.
-2024-12-01T15:46:37-06:00
+2024-12-01T16:15:34-06:00
 Running /Users/tnie/code/cpp/microbenchmarks/build/clang/src/similarity/Release/similarity_benchmarks
 Run on (8 X 24 MHz CPU s)
 CPU Caches:
   L1 Data 64 KiB
   L1 Instruction 128 KiB
   L2 Unified 4096 KiB (x8)
-Load Average: 4.34, 3.51, 2.73
+Load Average: 2.08, 2.41, 2.65
 ---------------------------------------------------------------------
 Benchmark                           Time             CPU   Iterations
 ---------------------------------------------------------------------
-BM_similarity_naive/4096         5079 ns         5079 ns       136898
-BM_similarity_naive/16382       20785 ns        20723 ns        34206
-BM_similarity_Eigen3/4096        1388 ns         1378 ns       513746
-BM_similarity_Eigen3/16382       5965 ns         5903 ns       120821
-BM_similarity_Arma/4096         10109 ns        10096 ns        68879
-BM_similarity_Arma/16382        41082 ns        41005 ns        17022
+BM_similarity_naive/4096         5077 ns         5076 ns       136657
+BM_similarity_naive/16382       20452 ns        20451 ns        34195
+BM_similarity_neon/4096          1250 ns         1249 ns       561176
+BM_similarity_neon/16382         5096 ns         5094 ns       135772
+BM_similarity_Eigen3/4096        1350 ns         1350 ns       514067
+BM_similarity_Eigen3/16382       5696 ns         5695 ns       118783
+BM_similarity_Arma/4096         10070 ns        10070 ns        69390
+BM_similarity_Arma/16382        42121 ns        41797 ns        17146
 ```

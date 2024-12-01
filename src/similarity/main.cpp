@@ -18,5 +18,12 @@ int main() {
   }
 #endif
 
+#if defined(__ARM_NEON__)
+  {
+    auto sim = cosine_similarity_neon(a.data(), b.data(), a.size());
+    fmt::println("Similarity (neon): {}", sim);
+  }
+#endif
+
   return 0;
 }

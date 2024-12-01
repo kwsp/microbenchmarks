@@ -33,6 +33,23 @@ BENCHMARK(BM_similarity_avx2)->Range(4096, 16382);
 
 #endif
 
+#if defined(__ARM_NEON__)
+
+void BM_similarity_neon(benchmark::State &state) {
+  arma::Col<float> a(state.range(0), arma::fill::randn);
+  arma::Col<float> b(state.range(0), arma::fill::randn);
+
+  volatile auto result =
+      cosine_similarity_neon(a.memptr(), b.memptr(), a.size());
+  for (auto _ : state) {
+    result = cosine_similarity_neon(a.memptr(), b.memptr(), a.size());
+  }
+}
+
+BENCHMARK(BM_similarity_neon)->Range(4096, 16382);
+
+#endif
+
 void BM_similarity_Eigen3(benchmark::State &state) {
   Eigen::VectorX<float> a(state.range(0));
   Eigen::VectorX<float> b(state.range(0));
