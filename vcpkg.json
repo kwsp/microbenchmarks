@@ -15,7 +15,7 @@
     {
       "name": "opencv",
       "platform": "!x64",
-      "features": ["tbb", "world"]
+      "features": ["world"]
     },
     {
       "name": "fftw3",
