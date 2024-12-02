@@ -14,6 +14,7 @@ inline float cosine_similarity_naive(float const *a, float const *b, size_t n) {
   }
   if (dot == 0) return 0;
   if (norm_a == 0 || norm_b == 0) return 1;
+
   return dot / (std::sqrt(norm_a) * std::sqrt(norm_b));
 }
 
@@ -124,8 +125,7 @@ double cos_normalize_f64_neon(double ab, double a2, double b2) {
   rsqrts = vmulq_f64(rsqrts, vrsqrtsq_f64(vmulq_f64(squares, rsqrts), rsqrts));
   rsqrts = vmulq_f64(rsqrts, vrsqrtsq_f64(vmulq_f64(squares, rsqrts), rsqrts));
   vst1q_f64(squares_arr, rsqrts);
-  double result = 1 - ab * squares_arr[0] * squares_arr[1];
-  return result > 0 ? result : 0;
+  return ab * squares_arr[0] * squares_arr[1];
 }
 
 inline double cosine_similarity_neon(float const *a, float const *b, size_t n) {
@@ -136,9 +136,9 @@ inline double cosine_similarity_neon(float const *a, float const *b, size_t n) {
   for (; i + n_step <= n; i += n_step) {
     float32x4_t a_vec = vld1q_f32(a + i);
     float32x4_t b_vec = vld1q_f32(b + i);
-    ab_vec = vfmaq_f32(a_vec, b_vec, ab_vec);
-    a2_vec = vfmaq_f32(a_vec, a_vec, a2_vec);
-    b2_vec = vfmaq_f32(b_vec, b_vec, b2_vec);
+    ab_vec = vfmaq_f32(ab_vec, a_vec, b_vec);
+    a2_vec = vfmaq_f32(a2_vec, a_vec, a_vec);
+    b2_vec = vfmaq_f32(b2_vec, b_vec, b_vec);
   }
   float ab = vaddvq_f32(ab_vec);
   float a2 = vaddvq_f32(a2_vec), b2 = vaddvq_f32(b2_vec);
