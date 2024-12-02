@@ -12,6 +12,25 @@ A C++ FFTW wrapper
 
 namespace fftw {
 
+// Place this at the beginning of main() and RAII will take care of setting up
+// and tearing down FFTW3 (threads and wisdom)
+// NOLINTNEXTLINE(*-special-member-functions)
+struct WisdomSetup {
+  WisdomSetup() {
+    static bool callSetup = true;
+    if (callSetup) {
+      fftw_make_planner_thread_safe();
+      callSetup = false;
+    }
+    fftw_import_wisdom_from_filename(".fftw_wisdom");
+    fftwf_import_wisdom_from_filename(".fftwf_wisdom");
+  }
+  ~WisdomSetup() {
+    fftw_export_wisdom_to_filename(".fftw_wisdom");
+    fftwf_export_wisdom_to_filename(".fftwf_wisdom");
+  }
+};
+
 template <typename T>
 concept Floating = std::is_same_v<T, float> || std::is_same_v<T, double>;
 
@@ -21,15 +40,24 @@ template <Floating T> struct Traits {
 };
 template <> struct Traits<double> {
   using FftwCx = fftw_complex;
-  using Plan = fftw_plan;
+  using PlanT = fftw_plan;
+  using IODim = fftw_iodim;
+  using R2RKind = fftw_r2r_kind;
+  using IODim64 = fftw_iodim64;
 };
 template <> struct Traits<float> {
   using FftwCx = fftwf_complex;
-  using Plan = fftwf_plan;
+  using PlanT = fftwf_plan;
+  using IODim = fftwf_iodim;
+  using R2RKind = fftwf_r2r_kind;
+  using IODim64 = fftwf_iodim64;
 };
 
 template <Floating T> using Complex = Traits<T>::FftwCx;
-template <Floating T> using PlanT = Traits<T>::Plan;
+template <Floating T> using PlanT = Traits<T>::PlanT;
+template <Floating T> using IODim = Traits<T>::IODim;
+template <Floating T> using R2RKind = Traits<T>::R2RKind;
+template <Floating T> using IODim64 = Traits<T>::IODim64;
 
 template <Floating T> struct prefix_;
 template <> struct prefix_<double> {
@@ -69,7 +97,7 @@ TEMPLATIZE(void, destroy_plan, PlanT<T> plan, plan)
       } else if constexpr (std::is_same_v<T, float>) {                         \
         return CONCAT(fftwf_plan_, FUNC)(PARAMS_CALL);                         \
       } else {                                                                 \
-        static_assert(false, "Not implemented");                               \
+        static_assert(false, "Not supported");                                 \
       }                                                                        \
     }()};                                                                      \
     return planner;                                                            \
@@ -78,11 +106,11 @@ TEMPLATIZE(void, destroy_plan, PlanT<T> plan, plan)
 #define PLAN_EXECUTE_METHOD(FUNC, PARAMS, PARAMS_CALL)                         \
   void FUNC(PARAMS) {                                                          \
     if constexpr (std::is_same_v<T, double>) {                                 \
-      CONCAT(fftw_, FUNC)(PARAMS_CALL);                                        \
+      CONCAT(fftw_, FUNC)(plan, PARAMS_CALL);                                  \
     } else if constexpr (std::is_same_v<T, float>) {                           \
-      CONCAT(fftwf_, FUNC)(PARAMS_CALL);                                       \
+      CONCAT(fftwf_, FUNC)(plan, PARAMS_CALL);                                 \
     } else {                                                                   \
-      static_assert(false, "Not implemented");                                 \
+      static_assert(false, "Not supported");                                   \
     }                                                                          \
   }
 
@@ -99,13 +127,51 @@ template <typename T> struct Plan {
     if (plan) { destroy_plan<T>(plan); }
   }
 
+  /**
+   * Basic Interface
+   */
+
+  /**
+   * Complex DFTs
+   * https://fftw.org/fftw3_doc/Complex-DFTs.html
+   */
+
   PLAN_CREATE_METHOD(dft_1d,
                      int n COMMA Complex<T> *in COMMA Complex<T> *out
                          COMMA int sign COMMA unsigned int flags,
                      n COMMA in COMMA out COMMA sign COMMA flags)
+  PLAN_CREATE_METHOD(dft_2d,
+                     int n0 COMMA int n1 COMMA Complex<T> *in COMMA Complex<T>
+                         *out COMMA int sign COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA in COMMA out COMMA sign COMMA flags)
+  PLAN_CREATE_METHOD(
+      dft_3d,
+      int n0 COMMA int n1 COMMA int n2 COMMA Complex<T> *in COMMA
+          Complex<T> *out COMMA int sign COMMA unsigned int flags,
+      n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA sign COMMA flags)
+  PLAN_CREATE_METHOD(dft,
+                     int rank COMMA int *n COMMA Complex<T> *in COMMA Complex<T>
+                         *out COMMA int sign COMMA unsigned int flags,
+                     n COMMA in COMMA out COMMA sign COMMA flags)
 
+  /**
+   * Real-data DFTs
+   * https://fftw.org/fftw3_doc/Real_002ddata-DFTs.html
+   */
   PLAN_CREATE_METHOD(dft_r2c_1d,
                      int n COMMA T *in COMMA Complex<T> *out
+                         COMMA unsigned int flags,
+                     n COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(dft_r2c_2d,
+                     int n0 COMMA int n1 COMMA T *in COMMA Complex<T> *out
+                         COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(dft_r2c_3d,
+                     int n0 COMMA int n1 COMMA int n2 COMMA T *in COMMA
+                         Complex<T> *out COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(dft_r2c,
+                     int rank COMMA int *n COMMA T *in COMMA Complex<T> *out
                          COMMA unsigned int flags,
                      n COMMA in COMMA out COMMA flags)
 
@@ -113,19 +179,221 @@ template <typename T> struct Plan {
                      int n COMMA Complex<T> *in COMMA T *out
                          COMMA unsigned int flags,
                      n COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(dft_c2r_2d,
+                     int n0 COMMA int n1 COMMA Complex<T> *in COMMA T *out
+                         COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(dft_c2r_3d,
+                     int n0 COMMA int n1 COMMA int n2 COMMA Complex<T> *in COMMA
+                         T *out COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(dft_c2r,
+                     int rank COMMA int *n COMMA Complex<T> *in COMMA T *out
+                         COMMA unsigned int flags,
+                     n COMMA in COMMA out COMMA flags)
+  /**
+   * Real-to-Real Transforms
+   * https://fftw.org/fftw3_doc/Real_002dto_002dReal-Transforms.html
+   */
+  PLAN_CREATE_METHOD(r2r_1d,
+                     int n COMMA T *in COMMA T *out COMMA unsigned int flags,
+                     n COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(r2r_2d,
+                     int n0 COMMA int n1 COMMA T *in COMMA T *out
+                         COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(r2r_3d,
+                     int n0 COMMA int n1 COMMA int n2 COMMA T *in COMMA T *out
+                         COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA flags)
+  PLAN_CREATE_METHOD(r2r,
+                     int rank COMMA int *n COMMA T *in COMMA T *out
+                         COMMA unsigned int flags,
+                     n COMMA in COMMA out COMMA flags)
 
-  PLAN_EXECUTE_METHOD(execute, , plan)
+  /**
+   * Advanced Complex DFTs
+   * https://fftw.org/fftw3_doc/Advanced-Complex-DFTs.html
+   */
+  PLAN_CREATE_METHOD(
+      many_dft,
+      int rank COMMA const int *n COMMA int howmany COMMA Complex<T> *in
+          COMMA const int *inembed COMMA int istride COMMA int idist COMMA
+              Complex<T> *out COMMA const int *onembed COMMA int ostride
+                  COMMA int odist COMMA int sign COMMA unsigned flags,
+      rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
+              COMMA flags)
 
+  /**
+   * Advanced Real-data DFTs
+   * https://fftw.org/fftw3_doc/Advanced-Real_002ddata-DFTs.html
+   */
+  PLAN_CREATE_METHOD(
+      many_dft_r2c,
+      int rank COMMA const int *n COMMA int howmany COMMA T *in
+          COMMA const int *inembed COMMA int istride COMMA int idist COMMA
+              Complex<T> *out COMMA const int *onembed COMMA int ostride
+                  COMMA int odist COMMA int sign COMMA unsigned flags,
+      rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
+              COMMA flags)
+  PLAN_CREATE_METHOD(
+      many_dft_c2r,
+      int rank COMMA const int *n COMMA int howmany COMMA Complex<T> *in
+          COMMA const int *inembed COMMA int istride COMMA int idist COMMA
+              T *out COMMA const int *onembed COMMA int ostride COMMA int odist
+                  COMMA int sign COMMA unsigned flags,
+      rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
+              COMMA flags)
+
+  /**
+   * Advanced Real-to-real Transforms
+   * https://fftw.org/fftw3_doc/Advanced-Real_002dto_002dreal-Transforms.html
+   */
+  PLAN_CREATE_METHOD(
+      many_dft_r2r,
+      int rank COMMA const int *n COMMA int howmany COMMA T *in
+          COMMA const int *inembed COMMA int istride COMMA int idist COMMA
+              T *out COMMA const int *onembed COMMA int ostride COMMA int odist
+                  COMMA int sign COMMA unsigned flags,
+      rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
+              COMMA flags)
+
+  /**
+   * Guru Complex DFTs
+   * https://fftw.org/fftw3_doc/Guru-Complex-DFTs.html
+   */
+  PLAN_CREATE_METHOD(guru_dft,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA Complex<T> *in
+                             COMMA Complex<T> *out COMMA int sign
+                                 COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA out COMMA sign COMMA flags)
+  PLAN_CREATE_METHOD(
+      guru64_dft,
+      int rank COMMA const IODim64<T> *dims COMMA int howmany_rank
+          COMMA const IODim64<T> *howmany_dims COMMA Complex<T> *in COMMA
+              Complex<T> *out COMMA int sign COMMA unsigned flags,
+      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA in COMMA out
+          COMMA sign COMMA flags)
+  PLAN_CREATE_METHOD(guru_split_dft,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA T *ri COMMA
+                             T *ii COMMA T *ro COMMA T *io COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         ri COMMA ii COMMA ro COMMA io COMMA flags)
+  PLAN_CREATE_METHOD(
+      guru64_split_dft,
+      int rank COMMA const IODim64<T> *dims COMMA int howmany_rank
+          COMMA const IODim64<T> *howmany_dims COMMA T *ri COMMA T *ii COMMA
+              T *ro COMMA T *io COMMA unsigned flags,
+      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA ri COMMA ii
+          COMMA ro COMMA io COMMA flags)
+
+  /**
+   * Guru Real-data DFTs
+   * https://fftw.org/fftw3_doc/Guru-Real_002ddata-DFTs.html
+   */
+  PLAN_CREATE_METHOD(guru_dft_r2c,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA T *in COMMA
+                             Complex<T> *out COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA out COMMA flags);
+  PLAN_CREATE_METHOD(guru64_dft_r2c,
+                     int rank COMMA const IODim64<T> *dims COMMA int
+                         howmany_rank COMMA const IODim64<T> *howmany_dims COMMA
+                             T *in COMMA Complex<T> *out COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA out COMMA flags);
+  PLAN_CREATE_METHOD(guru_split_dft_r2c,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA T *in COMMA
+                             T *ro COMMA T *io COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA ro COMMA io COMMA flags);
+  PLAN_CREATE_METHOD(guru64_split_dft_r2c,
+                     int rank COMMA const IODim64<T> *dims COMMA int
+                         howmany_rank COMMA const IODim64<T> *howmany_dims COMMA
+                             T *in COMMA T *ro COMMA T *io COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA ro COMMA io COMMA flags);
+  PLAN_CREATE_METHOD(guru_dft_c2r,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA
+                             fftw_complex *in COMMA T *out COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA out COMMA flags);
+  PLAN_CREATE_METHOD(guru64_dft_c2r,
+                     int rank COMMA const IODim64<T> *dims COMMA int
+                         howmany_rank COMMA const IODim64<T> *howmany_dims COMMA
+                             fftw_complex *in COMMA T *out COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA out COMMA flags);
+  PLAN_CREATE_METHOD(guru_split_dft_c2r,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA T *ri COMMA
+                             T *ii COMMA T *out COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         ri COMMA ii COMMA out COMMA flags);
+  PLAN_CREATE_METHOD(guru64_split_dft_c2r,
+                     int rank COMMA const IODim64<T> *dims
+                         COMMA int howmany_rank
+                             COMMA const IODim64<T> *howmany_dims COMMA T *ri
+                                 COMMA T *ii COMMA T *out COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         ri COMMA ii COMMA out COMMA flags);
+
+  /**
+   * Guru Real-to-real Transforms
+   */
+  PLAN_CREATE_METHOD(guru_r2r,
+                     int rank COMMA const IODim<T> *dims COMMA int howmany_rank
+                         COMMA const IODim<T> *howmany_dims COMMA T *in COMMA
+                             T *out COMMA const R2RKind<T> *kind
+                                 COMMA unsigned flags,
+                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
+                         in COMMA out COMMA kind COMMA flags)
+  PLAN_CREATE_METHOD(
+      guru64_r2r,
+      int rank COMMA const IODim64<T> *dims COMMA int howmany_rank
+          COMMA const IODim64<T> *howmany_dims COMMA T *in COMMA T *out
+              COMMA const R2RKind<T> *kind COMMA unsigned flags,
+      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA in COMMA out
+          COMMA kind COMMA flags)
+
+  void execute() {
+    if constexpr (std::is_same_v<T, double>) {
+      fftw_execute(plan);
+    } else if constexpr (std::is_same_v<T, float>) {
+      fftwf_execute(plan);
+    } else {
+      static_assert(false, "Not supported");
+    }
+  }
+
+  /**
+   * Array execute interface
+   * https://fftw.org/fftw3_doc/New_002darray-Execute-Functions.html#New_002darray-Execute-Functions
+   */
   PLAN_EXECUTE_METHOD(execute_dft, Complex<T> *in COMMA Complex<T> *out,
-                      plan COMMA in COMMA out);
+                      in COMMA out);
   PLAN_EXECUTE_METHOD(execute_split_dft,
                       T *ri COMMA T *ii COMMA T *ro COMMA T *io,
-                      plan COMMA ri COMMA ii COMMA ro COMMA io)
-  PLAN_EXECUTE_METHOD(execute_r2r, T *in COMMA T *out, plan COMMA in COMMA out)
+                      ri COMMA ii COMMA ro COMMA io)
   PLAN_EXECUTE_METHOD(execute_dft_r2c, T *in COMMA Complex<T> *out,
-                      plan COMMA in COMMA out)
+                      in COMMA out)
+  PLAN_EXECUTE_METHOD(execute_split_dft_r2c, T *in COMMA T *ro COMMA T *io,
+                      in COMMA ro COMMA io);
   PLAN_EXECUTE_METHOD(execute_dft_c2r, Complex<T> *in COMMA T *out,
-                      plan COMMA in COMMA out)
+                      in COMMA out)
+  PLAN_EXECUTE_METHOD(execute_split_dft_c2r, T *ri COMMA T *ii COMMA T *out,
+                      ri COMMA ii COMMA out)
+  PLAN_EXECUTE_METHOD(execute_r2r, T *in COMMA T *out, plan COMMA in COMMA out)
 };
 
 // In memory cache with key type K and value type V

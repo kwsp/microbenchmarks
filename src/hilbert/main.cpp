@@ -10,13 +10,11 @@
 
 template <typename T> std::span<T> to_span(Eigen::VectorX<T> &vec) {
   return {vec.data(), static_cast<size_t>(vec.size())};
-  Eigen::VectorXf;
 }
 
 template <typename T>
 std::span<const T> to_cspan(const Eigen::VectorX<T> &vec) {
   return {vec.data(), static_cast<size_t>(vec.size())};
-  Eigen::VectorXf;
 }
 
 int main(int argc, char *argv[]) {

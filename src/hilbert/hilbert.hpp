@@ -4,6 +4,17 @@
 #include <cassert>
 #include <span>
 
+template <typename T>
+void hilbert_abs_cx_scale_imag(T const *real, T const *imag, T fct, size_t n,
+                               T *out) {
+  for (auto i = 0; i < n; ++i) {
+    const auto ri = real[i];
+    const auto ii = imag[i] * fct;
+    const auto res = std::sqrt(real * real + imag * imag);
+    out[i] = res;
+  }
+}
+
 /**
 @brief Compute the analytic signal, using the Hilbert transform.
 */
@@ -49,12 +60,13 @@ void hilbert_abs(const std::span<const T> x, const std::span<T> env) {
   // Execute c2r fft on modified spectrum
   engine.backward();
 
-  // Construct the analytic signal
+  // Take the abs of the analytic signal
   const T fct = static_cast<T>(1. / n);
   for (auto i = 0; i < n; ++i) {
     const auto real = x[i];
     const auto imag = engine.in[i][1] * fct;
-    env[i] = std::abs(std::complex<T>{real, imag});
+    const auto res = std::sqrt(real * real + imag * imag);
+    env[i] = res;
   }
   // NOLINTEND(*-pointer-arithmetic, *-magic-numbers)
 }

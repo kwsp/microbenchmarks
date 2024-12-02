@@ -21,4 +21,4 @@ void hilbert_bench(benchmark::State &state, Func hilbert_func) {
 template <typename T> void BM_hilbert_fftw(benchmark::State &state) {
   hilbert_bench<T>(state, hilbert_abs<T>);
 }
-BENCHMARK(BM_hilbert_fftw<float>)->Args({2048, 4096});
+BENCHMARK(BM_hilbert_fftw<float>)->Range(2048, 8192);
