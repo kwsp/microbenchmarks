@@ -215,7 +215,7 @@ BENCHMARK(BM_conv1d_Accelerate_vDSP<double>)->ArgsProduct(ARGS);
 #endif
 
 int main(int argc, char **argv) {
-  fftw::FFTWGlobalSetup _fftwSetup;
+  fftw::WisdomSetup fftwWisdom();
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
