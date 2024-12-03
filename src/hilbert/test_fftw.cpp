@@ -129,6 +129,52 @@ TEST_F(FFTWPlanCreateR2R, BasicPlan) {
   ASSERT_NE(plan.plan, nullptr);
 };
 
+/*
+Test advanced interface
+*/
+TEST_F(FFTWPlanCreateC2C, AdvancedPlan) {
+  int rank = 1;
+  int dim = n;
+  int howmany = 1;
+  int *inembed = &dim;
+  int *onembed = &dim;
+  auto pf = fftw::Plan<T>::many_dft(rank, &dim, howmany, in, inembed, 1, 0, out,
+                                    onembed, 1, 0, FFTW_FORWARD, FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+}
+
+/*
+Test advanced interface
+*/
+TEST_F(FFTWPlanCreateR2C, AdvancedPlan) {
+  int rank = 1;
+  int dim = n;
+  int howmany = 1;
+  int *inembed = &dim;
+  int *onembed = &dim;
+  auto pf = fftw::Plan<T>::many_dft_r2c(rank, &dim, howmany, in, inembed, 1, 0,
+                                        out, onembed, 1, 0, FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+
+  auto pb = fftw::Plan<T>::many_dft_c2r(rank, &dim, howmany, out, onembed, 1, 0,
+                                        in, inembed, 1, 0, FFTW_ESTIMATE);
+  ASSERT_NE(pb.plan, nullptr);
+}
+/*
+Test advanced interface
+*/
+TEST_F(FFTWPlanCreateR2R, AdvancedPlan) {
+  int rank = 1;
+  int dim = n;
+  int howmany = 1;
+  int *inembed = &dim;
+  int *onembed = &dim;
+  auto kind = FFTW_DHT;
+  auto pf = fftw::Plan<T>::many_r2r(rank, &dim, howmany, in, inembed, 1, 0, out,
+                                    onembed, 1, 0, &kind, FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+}
+
 TEST(TestHilbert, Correct) {
   using T = double;
 

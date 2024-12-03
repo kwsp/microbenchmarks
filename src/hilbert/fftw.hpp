@@ -242,32 +242,30 @@ template <typename T> struct Plan {
       int rank COMMA const int *n COMMA int howmany COMMA T *in
           COMMA const int *inembed COMMA int istride COMMA int idist COMMA
               Complex<T> *out COMMA const int *onembed COMMA int ostride
-                  COMMA int odist COMMA int sign COMMA unsigned flags,
+                  COMMA int odist COMMA unsigned flags,
       rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
-          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
-              COMMA flags)
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA flags)
   PLAN_CREATE_METHOD(
       many_dft_c2r,
       int rank COMMA const int *n COMMA int howmany COMMA Complex<T> *in
           COMMA const int *inembed COMMA int istride COMMA int idist COMMA
               T *out COMMA const int *onembed COMMA int ostride COMMA int odist
-                  COMMA int sign COMMA unsigned flags,
+                  COMMA unsigned flags,
       rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
-          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
-              COMMA flags)
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA flags)
 
   /**
    * Advanced Real-to-real Transforms
    * https://fftw.org/fftw3_doc/Advanced-Real_002dto_002dreal-Transforms.html
    */
   PLAN_CREATE_METHOD(
-      many_dft_r2r,
+      many_r2r,
       int rank COMMA const int *n COMMA int howmany COMMA T *in
           COMMA const int *inembed COMMA int istride COMMA int idist COMMA
               T *out COMMA const int *onembed COMMA int ostride COMMA int odist
-                  COMMA int sign COMMA unsigned flags,
+                  COMMA R2RKind<T> *kind COMMA unsigned flags,
       rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
-          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA sign
+          idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA kind
               COMMA flags)
 
   /**
