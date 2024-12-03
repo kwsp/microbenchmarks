@@ -105,6 +105,7 @@ TEMPLATIZE(void, destroy_plan, PlanT<T> plan, plan)
 
 #define PLAN_EXECUTE_METHOD(FUNC, PARAMS, PARAMS_CALL)                         \
   void FUNC(PARAMS) {                                                          \
+    assert(plan != nullptr);                                                   \
     if constexpr (std::is_same_v<T, double>) {                                 \
       CONCAT(fftw_, FUNC)(plan, PARAMS_CALL);                                  \
     } else if constexpr (std::is_same_v<T, float>) {                           \
@@ -152,7 +153,7 @@ template <typename T> struct Plan {
   PLAN_CREATE_METHOD(dft,
                      int rank COMMA int *n COMMA Complex<T> *in COMMA Complex<T>
                          *out COMMA int sign COMMA unsigned int flags,
-                     n COMMA in COMMA out COMMA sign COMMA flags)
+                     rank COMMA n COMMA in COMMA out COMMA sign COMMA flags)
 
   /**
    * Real-data DFTs
@@ -173,7 +174,7 @@ template <typename T> struct Plan {
   PLAN_CREATE_METHOD(dft_r2c,
                      int rank COMMA int *n COMMA T *in COMMA Complex<T> *out
                          COMMA unsigned int flags,
-                     n COMMA in COMMA out COMMA flags)
+                     rank COMMA n COMMA in COMMA out COMMA flags)
 
   PLAN_CREATE_METHOD(dft_c2r_1d,
                      int n COMMA Complex<T> *in COMMA T *out
@@ -190,26 +191,33 @@ template <typename T> struct Plan {
   PLAN_CREATE_METHOD(dft_c2r,
                      int rank COMMA int *n COMMA Complex<T> *in COMMA T *out
                          COMMA unsigned int flags,
-                     n COMMA in COMMA out COMMA flags)
+                     rank COMMA n COMMA in COMMA out COMMA flags)
   /**
    * Real-to-Real Transforms
    * https://fftw.org/fftw3_doc/Real_002dto_002dReal-Transforms.html
    */
   PLAN_CREATE_METHOD(r2r_1d,
-                     int n COMMA T *in COMMA T *out COMMA unsigned int flags,
-                     n COMMA in COMMA out COMMA flags)
-  PLAN_CREATE_METHOD(r2r_2d,
-                     int n0 COMMA int n1 COMMA T *in COMMA T *out
+                     int n COMMA T *in COMMA T *out COMMA R2RKind<T> kind
                          COMMA unsigned int flags,
-                     n0 COMMA n1 COMMA in COMMA out COMMA flags)
+                     n COMMA in COMMA out COMMA kind COMMA flags)
+  PLAN_CREATE_METHOD(
+      r2r_2d,
+      int n0 COMMA int n1 COMMA T *in COMMA T *out COMMA R2RKind<T> kind0 COMMA
+          R2RKind<T>
+              kind1 COMMA unsigned int flags,
+      n0 COMMA n1 COMMA in COMMA out COMMA kind0 COMMA kind1 COMMA flags)
   PLAN_CREATE_METHOD(r2r_3d,
                      int n0 COMMA int n1 COMMA int n2 COMMA T *in COMMA T *out
-                         COMMA unsigned int flags,
-                     n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA flags)
+                         COMMA R2RKind<T>
+                             kind0 COMMA R2RKind<T>
+                                 kind1 COMMA R2RKind<T>
+                                     kind2 COMMA unsigned int flags,
+                     n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA kind0 COMMA
+                         kind1 COMMA kind2 COMMA flags)
   PLAN_CREATE_METHOD(r2r,
-                     int rank COMMA int *n COMMA T *in COMMA T *out
-                         COMMA unsigned int flags,
-                     n COMMA in COMMA out COMMA flags)
+                     int rank COMMA const int *n COMMA T *in COMMA T *out
+                         COMMA const R2RKind<T> *kind COMMA unsigned int flags,
+                     rank COMMA n COMMA in COMMA out COMMA kind COMMA flags)
 
   /**
    * Advanced Complex DFTs

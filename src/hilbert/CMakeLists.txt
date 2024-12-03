@@ -1,5 +1,6 @@
 find_package(fmt CONFIG REQUIRED)
 find_package(benchmark CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(OpenBLAS CONFIG REQUIRED)
@@ -59,3 +60,11 @@ add_executable_script(hilbert main.cpp)
 
 add_executable_script(hilbert_benchmarks benchmarks.cpp)
 target_link_libraries(hilbert_benchmarks PRIVATE benchmark::benchmark benchmark::benchmark_main)
+
+enable_testing()
+
+add_executable_script(fftw_test test_fftw.cpp)
+target_link_libraries(fftw_test PRIVATE
+  GTest::gtest
+  GTest::gtest_main
+)

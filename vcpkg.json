@@ -6,6 +6,7 @@
     "fmt",
     "armadillo",
     "eigen3",
+    "gtest",
     "benchmark",
     {
       "name": "opencv",
