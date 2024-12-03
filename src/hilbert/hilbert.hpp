@@ -121,28 +121,23 @@ void hilbert_abs_2(const std::span<const T> x, const std::span<T> env) {
 template <typename T>
 void hilbert_abs_cx_scale_imag_neon(T const *real, T const *imag, T fct,
                                     size_t n, T *out) {
+
   size_t i = 0;
   if constexpr (std::is_same_v<T, float>) {
 
     float32x4_t fct_vec = vdupq_n_f32(fct);
     constexpr size_t simd_width = 4;
     for (; i + simd_width <= n; i += simd_width) {
-      auto real_vec = vld1q_f32(&real[i]);
-      auto imag_vec = vld1q_f32(&imag[i]);
+      auto real_vec1 = vld1q_f32(&real[i]);
+      auto imag_vec1 = vld1q_f32(&imag[i]);
 
-      // Scale imag
-      imag_vec = vmulq_f32(imag_vec, fct_vec);
-
-      // Square real and imag
-      real_vec = vmulq_f32(real_vec, real_vec);
-      imag_vec = vmulq_f32(imag_vec, imag_vec);
-
-      // Sum the squares
-      auto sum_vec = vaddq_f32(real_vec, imag_vec);
-
-      // Sqrt
-      auto res = vsqrtq_f32(sum_vec);
-      vst1q_f32(&out[i], res);
+      // Proc first set
+      imag_vec1 = vmulq_f32(imag_vec1, fct_vec);
+      real_vec1 = vmulq_f32(real_vec1, real_vec1);
+      imag_vec1 = vmulq_f32(imag_vec1, imag_vec1);
+      auto sum_vec1 = vaddq_f32(real_vec1, imag_vec1);
+      auto res1 = vsqrtq_f32(sum_vec1);
+      vst1q_f32(&out[i], res1);
     }
 
   } else if constexpr (std::is_same_v<T, double>) {
@@ -155,14 +150,12 @@ void hilbert_abs_cx_scale_imag_neon(T const *real, T const *imag, T fct,
 
       // Scale imag
       imag_vec = vmulq_f64(imag_vec, fct_vec);
-
       // Square real and imag
       real_vec = vmulq_f64(real_vec, real_vec);
       imag_vec = vmulq_f64(imag_vec, imag_vec);
 
       // Sum the squares
       auto sum_vec = vaddq_f64(real_vec, imag_vec);
-
       // Sqrt
       auto res = vsqrtq_f64(sum_vec);
       vst1q_f64(&out[i], res);
