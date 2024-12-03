@@ -6,19 +6,20 @@ A C++ FFTW wrapper
 #include <complex>
 #include <cstdlib>
 #include <fftw3.h>
-#include <span>
 #include <type_traits>
 #include <unordered_map>
 
 namespace fftw {
 
+const static unsigned int FLAGS = FFTW_ESTIMATE;
+
 // Place this at the beginning of main() and RAII will take care of setting up
 // and tearing down FFTW3 (threads and wisdom)
 // NOLINTNEXTLINE(*-special-member-functions)
 struct WisdomSetup {
-  WisdomSetup() {
+  WisdomSetup(bool threadSafe) {
     static bool callSetup = true;
-    if (callSetup) {
+    if (threadSafe && callSetup) {
       fftw_make_planner_thread_safe();
       callSetup = false;
     }
@@ -491,10 +492,9 @@ template <Floating T> struct EngineDFT1D : public cache_mixin<EngineDFT1D<T>> {
   Plan plan_backward;
 
   explicit EngineDFT1D(size_t n)
-      : buf(n), plan_forward(Plan::dft_1d(n, buf.in, buf.out, FFTW_FORWARD,
-                                          FFTW_ESTIMATE)),
-        plan_backward(
-            Plan::dft_1d(n, buf.out, buf.in, FFTW_BACKWARD, FFTW_ESTIMATE)){};
+      : buf(n),
+        plan_forward(Plan::dft_1d(n, buf.in, buf.out, FFTW_FORWARD, FLAGS)),
+        plan_backward(Plan::dft_1d(n, buf.out, buf.in, FFTW_BACKWARD, FLAGS)){};
 
   void forward() { plan_forward.execute(); }
   void forward(Cx *in, Cx *out) const { plan_forward.execute(in, out); }
@@ -516,9 +516,9 @@ struct EngineDFTSplit1D : public cache_mixin<EngineDFTSplit1D<T>> {
   explicit EngineDFTSplit1D(size_t n)
       : buf(n), dim(IODim<T>{.n = (int)n, .is = 1, .os = 1}),
         plan_forward(Plan::guru_split_dft(1, &dim, 0, nullptr, buf.ri, buf.ii,
-                                          buf.ro, buf.io, FFTW_ESTIMATE)),
+                                          buf.ro, buf.io, FLAGS)),
         plan_backward(Plan::guru_split_dft(1, &dim, 0, nullptr, buf.io, buf.ro,
-                                           buf.ii, buf.ri, FFTW_ESTIMATE)){
+                                           buf.ii, buf.ri, FLAGS)){
             /*
             https://fftw.org/fftw3_doc/Guru-Complex-DFTs.html#Guru-Complex-DFTs
             There is no sign parameter in fftw_plan_guru_split_dft. This
@@ -546,9 +546,9 @@ template <Floating T> struct EngineR2C1D : public cache_mixin<EngineR2C1D<T>> {
 
   explicit EngineR2C1D(size_t n)
       : buf(n), plan_forward(Plan::dft_r2c_1d(static_cast<int>(n), buf.in,
-                                              buf.out, FFTW_ESTIMATE)),
-        plan_backward(Plan::dft_c2r_1d(static_cast<int>(n), buf.out, buf.in,
-                                       FFTW_ESTIMATE)) {}
+                                              buf.out, FLAGS)),
+        plan_backward(
+            Plan::dft_c2r_1d(static_cast<int>(n), buf.out, buf.in, FLAGS)) {}
 
   void forward() const { plan_forward.execute(); }
   void forward(T *in, Cx *out) const { plan_forward.execute_dft_r2c(in, out); }
@@ -570,6 +570,7 @@ inline void normalize_add(t *out, t *in, size_t len, t fct) {
     out[i] += in[i] * fct;
   }
 }
+
 /**
 in[i] *= fct
  */
