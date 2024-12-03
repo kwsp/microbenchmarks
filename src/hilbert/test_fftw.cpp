@@ -3,6 +3,8 @@
 #include <array>
 #include <gtest/gtest.h>
 
+// NOLINTBEGIN(*-magic-numbers, *-pointer-arithmetic)
+
 template <typename T>
 inline void ExpectArraysNear(const T *arr1, const T *arr2, size_t size,
                              T tolerance) {
@@ -407,6 +409,62 @@ TEST_F(FFTWPlanCreateR2CSplit, GuruPlanSplitCorrect) {
   ExpectArraysNear<T>(in, in_, 1e-7);
 }
 
+TEST(FFTWEngineDFTSplit1D, Correct) {
+  using T = double;
+  const size_t n = 20;
+  auto &engine = fftw::EngineDFTSplit1D<double>::get(n);
+  auto &buf = engine.buf;
+
+  std::array<T, n> ri = {0.37373746, 0.50891652, 0.55796617, 0.68466218,
+                         0.81322263, 0.9636271,  0.10275448, 0.30418813,
+                         0.05352298, 0.27089339, 0.81785067, 0.70974261,
+                         0.49617468, 0.70841385, 0.95277489, 0.40088886,
+                         0.65401759, 0.67811701, 0.33377126, 0.75203252};
+
+  std::array<T, n> ii = {0.31503709, 0.01222878, 0.37395341, 0.20616469,
+                         0.96977226, 0.37168649, 0.06350971, 0.61375213,
+                         0.18664752, 0.26775408, 0.24158869, 0.33308978,
+                         0.29192483, 0.98340089, 0.77998431, 0.44691549,
+                         0.41474552, 0.68283391, 0.60902417, 0.29519216};
+
+  std::array<T, n> ro = {
+      1.11372750e+01,  -7.88891637e-01, -2.94788137e-01, -1.74803590e+00,
+      -4.89130053e-01, 4.83477745e-02,  1.81103037e+00,  -9.53899877e-01,
+      -9.72508383e-01, -1.02654146e+00, -8.25689340e-01, 1.35322329e-03,
+      7.34750980e-01,  -4.75332010e-01, -4.71947899e-01, -7.97232009e-01,
+      2.37013290e+00,  -3.54293724e-01, -1.08324412e+00, 1.65339357e+00};
+
+  std::array<T, n> io = {8.45920591,  0.7085429,   -3.37942535, 1.01996982,
+                         -0.22620757, -0.16838665, 0.4621921,   0.41449206,
+                         0.77953477,  0.52833164,  0.03316912,  2.15969006,
+                         -0.66386765, -2.4567801,  1.48734435,  0.38852051,
+                         -1.47252668, -1.05815701, 0.08683881,  -0.80173922};
+
+  std::copy(ri.data(), ri.data() + ri.size(), buf.ri);
+  std::copy(ii.data(), ii.data() + ii.size(), buf.ii);
+  std::fill(buf.ro, buf.ro + n, 0);
+  std::fill(buf.io, buf.io + n, 0);
+
+  engine.forward();
+
+  ExpectArraysNear(ro.data(), buf.ro, n, 1e-6);
+  ExpectArraysNear(io.data(), buf.io, n, 1e-6);
+
+  // Check backward
+
+  std::fill(buf.ri, buf.ri + n, 0);
+  std::fill(buf.ii, buf.ii + n, 0);
+
+  engine.backward();
+
+  const T fct = 1. / n;
+  fftw::normalize(buf.ri, n, fct);
+  fftw::normalize(buf.ii, n, fct);
+
+  ExpectArraysNear(ri.data(), buf.ri, n, 1e-6);
+  ExpectArraysNear(ii.data(), buf.ii, n, 1e-6);
+}
+
 TEST(TestHilbert, Correct) {
   using T = double;
 
@@ -421,3 +479,5 @@ TEST(TestHilbert, Correct) {
 
   hilbert_abs<T>(inp, out);
 }
+
+// NOLINTEND(*-magic-numbers, *-pointer-arithmetic)

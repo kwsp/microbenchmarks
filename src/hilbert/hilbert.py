@@ -77,4 +77,13 @@ plt.legend()
 res
 
 # %%
-np.random.random(20)
+x = np.random.random(20) + np.random.random(20) * 1j
+x
+
+# %%
+o = np.fft.fft(x)
+
+# %%
+o.imag
+
+# %%

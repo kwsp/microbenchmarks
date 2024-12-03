@@ -416,76 +416,167 @@ template <typename Child> struct cache_mixin {
   static auto get(size_t n) -> Child & { return *get_cached<size_t, Child>(n); }
 };
 
-template <Floating T>
-struct engine_dft_1d : public cache_mixin<engine_dft_1d<T>> {
+template <typename T> struct C2CBuffer {
+  using Cx = fftw::Complex<T>;
+  Cx *in, *out;
+  explicit C2CBuffer(size_t n)
+      : in(fftw::alloc_complex<T>(n)), out(fftw::alloc_complex<T>(n)) {}
+  C2CBuffer(const C2CBuffer &) = delete;
+  C2CBuffer(C2CBuffer &&) = delete;
+  C2CBuffer &operator=(const C2CBuffer &) = delete;
+  C2CBuffer &operator=(C2CBuffer &&) = delete;
+  ~C2CBuffer() noexcept {
+    if (in) fftw::free<T>(in);
+    if (out) fftw::free<T>(out);
+  }
+};
+
+template <typename T> struct C2CSplitBuffer {
+  using Cx = fftw::Complex<T>;
+  T *ri, *ii, *ro, *io;
+  explicit C2CSplitBuffer(size_t n)
+      : ri(fftw::alloc_real<T>(n)), ii(fftw::alloc_real<T>(n)),
+        ro(fftw::alloc_real<T>(n)), io(fftw::alloc_real<T>(n)) {}
+  C2CSplitBuffer(const C2CSplitBuffer &) = delete;
+  C2CSplitBuffer(C2CSplitBuffer &&) = delete;
+  C2CSplitBuffer &operator=(const C2CSplitBuffer &) = delete;
+  C2CSplitBuffer &operator=(C2CSplitBuffer &&) = delete;
+  ~C2CSplitBuffer() noexcept {
+    if (ri) fftw::free<T>(ri);
+    if (ii) fftw::free<T>(ii);
+    if (ro) fftw::free<T>(ro);
+    if (io) fftw::free<T>(io);
+  }
+};
+
+template <typename T> struct R2CBuffer {
+  using Cx = fftw::Complex<T>;
+  T *in;
+  Cx *out;
+  explicit R2CBuffer(size_t n)
+      : in(fftw::alloc_real<T>(n)), out(fftw::alloc_complex<T>(n / 2 + 1)) {}
+  R2CBuffer(const R2CBuffer &) = delete;
+  R2CBuffer(R2CBuffer &&) = delete;
+  R2CBuffer &operator=(const R2CBuffer &) = delete;
+  R2CBuffer &operator=(R2CBuffer &&) = delete;
+  ~R2CBuffer() noexcept {
+    if (in) fftw::free<T>(in);
+    if (out) fftw::free<T>(out);
+  }
+};
+
+template <typename T> struct R2CSplitBuffer {
+  using Cx = fftw::Complex<T>;
+  T *in, *ro, *io;
+  explicit R2CSplitBuffer(size_t n)
+      : in(fftw::alloc_real<T>(n)), ro(fftw::alloc_real<T>(n / 2 + 1)),
+        io(fftw::alloc_real<T>(n / 2 + 1)) {}
+  R2CSplitBuffer(const R2CSplitBuffer &) = delete;
+  R2CSplitBuffer(R2CSplitBuffer &&) = delete;
+  R2CSplitBuffer &operator=(const R2CSplitBuffer &) = delete;
+  R2CSplitBuffer &operator=(R2CSplitBuffer &&) = delete;
+  ~R2CSplitBuffer() noexcept {
+    if (in) fftw::free<T>(in);
+    if (ro) fftw::free<T>(ro);
+    if (io) fftw::free<T>(io);
+  }
+};
+
+template <Floating T> struct EngineDFT1D : public cache_mixin<EngineDFT1D<T>> {
   using Cx = fftw::Complex<T>;
   using Plan = fftw::Plan<T>;
 
-  std::span<Cx> in;
-  std::span<Cx> out;
+  C2CBuffer<T> buf;
   Plan plan_forward;
   Plan plan_backward;
 
-  engine_dft_1d(const engine_dft_1d &) = delete;
-  engine_dft_1d(engine_dft_1d &&) = delete;
-  engine_dft_1d &operator=(const engine_dft_1d &) = delete;
-  engine_dft_1d &operator=(engine_dft_1d &&) = delete;
-
-  explicit engine_dft_1d(size_t n)
-      : in(fftw::alloc_complex<T>(n), n), out(fftw::alloc_complex<T>(n), n),
-        plan_forward(Plan::dft_1d(n, in.data(), out.data(), FFTW_FORWARD,
-                                  FFTW_ESTIMATE)),
-        plan_backward(Plan::dft_1d(n, out.data(), in.data(), FFTW_BACKWARD,
-                                   FFTW_ESTIMATE)){};
-  ~engine_dft_1d() {
-    fftw::free<T>(in.data());
-    fftw::free<T>(out.data());
-  }
+  explicit EngineDFT1D(size_t n)
+      : buf(n), plan_forward(Plan::dft_1d(n, buf.in, buf.out, FFTW_FORWARD,
+                                          FFTW_ESTIMATE)),
+        plan_backward(
+            Plan::dft_1d(n, buf.out, buf.in, FFTW_BACKWARD, FFTW_ESTIMATE)){};
 
   void forward() { plan_forward.execute(); }
-  void forward(Cx *inp, Cx *out) { plan_forward.execute(inp, out); }
+  void forward(Cx *in, Cx *out) const { plan_forward.execute(in, out); }
 
   void backward() { plan_backward.execute(); }
-  void backward(Cx *inp, Cx *out) { plan_backward.execute(inp, out); }
+  void backward(Cx *in, Cx *out) const { plan_backward.execute(in, out); }
 };
 
 template <Floating T>
-struct engine_r2c_1d : public cache_mixin<engine_r2c_1d<T>> {
+struct EngineDFTSplit1D : public cache_mixin<EngineDFTSplit1D<T>> {
   using Cx = fftw::Complex<T>;
   using Plan = fftw::Plan<T>;
 
-  std::span<T> real;
-  std::span<Cx> cx;
+  C2CSplitBuffer<T> buf;
+  IODim<T> dim;
   Plan plan_forward;
   Plan plan_backward;
 
-  engine_r2c_1d(const engine_r2c_1d &) = delete;
-  engine_r2c_1d(engine_r2c_1d &&) = delete;
-  engine_r2c_1d &operator=(const engine_r2c_1d &) = delete;
-  engine_r2c_1d &operator=(engine_r2c_1d &&) = delete;
+  explicit EngineDFTSplit1D(size_t n)
+      : buf(n), dim(IODim<T>{.n = (int)n, .is = 1, .os = 1}),
+        plan_forward(Plan::guru_split_dft(1, &dim, 0, nullptr, buf.ri, buf.ii,
+                                          buf.ro, buf.io, FFTW_ESTIMATE)),
+        plan_backward(Plan::guru_split_dft(1, &dim, 0, nullptr, buf.io, buf.ro,
+                                           buf.ii, buf.ri, FFTW_ESTIMATE)){
+            /*
+            https://fftw.org/fftw3_doc/Guru-Complex-DFTs.html#Guru-Complex-DFTs
+            There is no sign parameter in fftw_plan_guru_split_dft. This
+            function always plans for an FFTW_FORWARD transform. To plan for an
+            FFTW_BACKWARD transform, you can exploit the identity that the
+            backwards DFT is equal to the forwards DFT with the real and
+            imaginary parts swapped.
+            */
+        };
 
-  explicit engine_r2c_1d(size_t n)
-      : real(fftw::alloc_real<T>(n), n),
-        cx(fftw::alloc_complex<T>(n / 2 + 1), n / 2 + 1),
-        plan_forward(Plan::dft_r2c_1d(static_cast<int>(n), real.data(),
-                                      cx.data(), FFTW_ESTIMATE)),
-        plan_backward(
-            Plan::dft_c2r_1d(static_cast<int>(n), cx.data(), FFTW_ESTIMATE)) {}
+  void forward() { plan_forward.execute(); }
+  void forward(Cx *in, Cx *out) const { plan_forward.execute(in, out); }
 
-  ~engine_r2c_1d() {
-    fftw::free<T>(real.data());
-    fftw::free<T>(cx.data());
-  }
-
-  inline void forward() const { plan_forward.execute(); }
-  inline void forward(T *inp, Cx *out) const {
-    plan_forward.execute_dft_r2c(inp, out);
-  }
-
-  inline void backward() const { plan_forward.execute(); }
-  inline void backward(Cx *inp, T *out) const {
-    plan_forward.execute_dft_c2r(inp, out);
-  }
+  void backward() { plan_backward.execute(); }
+  void backward(Cx *in, Cx *out) const { plan_backward.execute(in, out); }
 };
+
+template <Floating T> struct EngineR2C1D : public cache_mixin<EngineR2C1D<T>> {
+  using Cx = fftw::Complex<T>;
+  using Plan = fftw::Plan<T>;
+
+  R2CBuffer<T> buf;
+  Plan plan_forward;
+  Plan plan_backward;
+
+  explicit EngineR2C1D(size_t n)
+      : buf(n), plan_forward(Plan::dft_r2c_1d(static_cast<int>(n), buf.in,
+                                              buf.out, FFTW_ESTIMATE)),
+        plan_backward(Plan::dft_c2r_1d(static_cast<int>(n), buf.out, buf.in,
+                                       FFTW_ESTIMATE)) {}
+
+  void forward() const { plan_forward.execute(); }
+  void forward(T *in, Cx *out) const { plan_forward.execute_dft_r2c(in, out); }
+
+  void backward() const { plan_forward.execute(); }
+  void backward(Cx *in, T *out) const { plan_forward.execute_dft_c2r(in, out); }
+};
+
+/**
+Helper functions
+ */
+
+/**
+out[i] += in[i] * fct
+ */
+template <typename t>
+inline void normalize_add(t *out, t *in, size_t len, t fct) {
+  for (size_t i = 0; i < len; ++i) {
+    out[i] += in[i] * fct;
+  }
+}
+/**
+in[i] *= fct
+ */
+template <typename t> inline void normalize(t *in, size_t len, t fct) {
+  for (size_t i = 0; i < len; ++i) {
+    in[i] *= fct;
+  }
+}
 
 } // namespace fftw
