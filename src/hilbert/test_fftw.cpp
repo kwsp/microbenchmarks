@@ -57,6 +57,27 @@ protected:
   }
 };
 
+class FFTWPlanCreateR2CSplit : public testing::Test {
+protected:
+  using T = double;
+  T *in;
+  T *ro;
+  T *io;
+  int n = 20;
+
+  FFTWPlanCreateR2CSplit() {
+    in = fftw::alloc_real<T>(n);
+    ro = fftw::alloc_real<T>(n / 2 + 1);
+    io = fftw::alloc_real<T>(n / 2 + 1);
+  }
+
+  ~FFTWPlanCreateR2CSplit() override {
+    fftw::free<T>(in);
+    fftw::free<T>(ro);
+    fftw::free<T>(io);
+  }
+};
+
 TEST_F(FFTWPlanCreateC2C, BasicPlan1d) {
   auto plan = fftw::Plan<T>::dft_1d(n, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
   ASSERT_NE(plan.plan, nullptr);
@@ -173,6 +194,78 @@ TEST_F(FFTWPlanCreateR2R, AdvancedPlan) {
   auto pf = fftw::Plan<T>::many_r2r(rank, &dim, howmany, in, inembed, 1, 0, out,
                                     onembed, 1, 0, &kind, FFTW_ESTIMATE);
   ASSERT_NE(pf.plan, nullptr);
+}
+
+/*
+Test guru interface
+*/
+TEST_F(FFTWPlanCreateC2C, GuruPlan) {
+  {
+    int rank = 1;
+    int howmany = 1;
+    fftw::IODim<T> dim{.n = n, .is = n, .os = n};
+    fftw::IODim<T> howmany_dim{.n = n, .is = n, .os = n};
+
+    auto pf = fftw::Plan<T>::guru_dft(rank, &dim, howmany, &howmany_dim, in,
+                                      out, FFTW_FORWARD, FFTW_ESTIMATE);
+    ASSERT_NE(pf.plan, nullptr);
+  }
+  {
+    int rank = 1;
+    int howmany = 1;
+    fftw::IODim64<T> dim{.n = n, .is = n, .os = n};
+    fftw::IODim64<T> howmany_dim{.n = n, .is = n, .os = n};
+
+    auto pf = fftw::Plan<T>::guru64_dft(rank, &dim, howmany, &howmany_dim, in,
+                                        out, FFTW_FORWARD, FFTW_ESTIMATE);
+    ASSERT_NE(pf.plan, nullptr);
+  }
+}
+
+TEST_F(FFTWPlanCreateR2C, GuruPlan) {
+  {
+    int rank = 1;
+    int howmany = 1;
+    fftw::IODim<T> dim{.n = n, .is = n, .os = n};
+    fftw::IODim<T> howmany_dim{.n = n, .is = n, .os = n};
+
+    auto pf = fftw::Plan<T>::guru_dft_r2c(rank, &dim, howmany, &howmany_dim, in,
+                                          out, FFTW_ESTIMATE);
+    ASSERT_NE(pf.plan, nullptr);
+
+    auto pb = fftw::Plan<T>::guru_dft_c2r(rank, &dim, howmany, &howmany_dim,
+                                          out, in, FFTW_ESTIMATE);
+    ASSERT_NE(pb.plan, nullptr);
+  }
+  {
+    int rank = 1;
+    int howmany = 1;
+    fftw::IODim64<T> dim{.n = n, .is = n, .os = n};
+    fftw::IODim64<T> howmany_dim{.n = n, .is = n, .os = n};
+
+    auto pf = fftw::Plan<T>::guru64_dft_r2c(rank, &dim, howmany, &howmany_dim,
+                                            in, out, FFTW_ESTIMATE);
+    ASSERT_NE(pf.plan, nullptr);
+
+    auto pb = fftw::Plan<T>::guru64_dft_c2r(rank, &dim, howmany, &howmany_dim,
+                                            out, in, FFTW_ESTIMATE);
+    ASSERT_NE(pb.plan, nullptr);
+  }
+}
+
+TEST_F(FFTWPlanCreateR2CSplit, GuruPlanSplit) {
+  int rank = 1;
+  fftw::IODim<T> dim{.n = n, .is = n, .os = n};
+  int howmany = 1;
+  fftw::IODim<T> howmany_dim{.n = n, .is = n, .os = n};
+
+  auto pf = fftw::Plan<T>::guru_split_dft_r2c(rank, &dim, howmany, &howmany_dim,
+                                              in, ro, io, FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+
+  auto pb = fftw::Plan<T>::guru_split_dft_c2r(rank, &dim, howmany, &howmany_dim,
+                                              ro, io, in, FFTW_ESTIMATE);
+  ASSERT_NE(pb.plan, nullptr);
 }
 
 TEST(TestHilbert, Correct) {

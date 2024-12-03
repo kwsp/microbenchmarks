@@ -90,7 +90,7 @@ TEMPLATIZE(void, free, void *n, n)
 TEMPLATIZE(void, destroy_plan, PlanT<T> plan, plan)
 
 #define PLAN_CREATE_METHOD(FUNC, PARAMS, PARAMS_CALL)                          \
-  static Plan FUNC(PARAMS) {                                                   \
+  [[nodiscard]] static Plan FUNC(PARAMS) {                                     \
     Plan<T> planner{[&]() {                                                    \
       if constexpr (std::is_same_v<T, double>) {                               \
         return CONCAT(fftw_plan_, FUNC)(PARAMS_CALL);                          \
