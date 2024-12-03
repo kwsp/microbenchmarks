@@ -77,4 +77,4 @@ plt.legend()
 res
 
 # %%
-np_hilb
+np.random.random(20)

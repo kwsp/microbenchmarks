@@ -3,6 +3,24 @@
 #include <array>
 #include <gtest/gtest.h>
 
+template <typename T>
+inline void ExpectArraysNear(const T *arr1, const T *arr2, size_t size,
+                             T tolerance) {
+  for (size_t i = 0; i < size; ++i) {
+    if (std::abs(arr1[i] - arr2[i]) > tolerance) {
+      GTEST_FAIL() << "Arrays differ at index " << i << ": expected " << arr1[i]
+                   << " but got " << arr2[i] << ", tolerance = " << tolerance;
+    }
+  }
+}
+
+template <typename T>
+void ExpectArraysNear(std::span<const T> arr1, std::span<const T> arr2,
+                      T tolerance) {
+  assert(arr1.size() == arr2.size());
+  return ExpectArraysNear<T>(arr1.data(), arr2.data(), arr1.size(), tolerance);
+}
+
 class FFTWPlanCreateC2C : public testing::Test {
 protected:
   using T = double;
@@ -21,6 +39,29 @@ protected:
   }
 };
 
+class FFTWPlanCreateC2CSplit : public testing::Test {
+protected:
+  using T = double;
+  T *ri;
+  T *ii;
+  T *ro;
+  T *io;
+  int n = 20;
+
+  FFTWPlanCreateC2CSplit() {
+    ri = fftw::alloc_real<T>(n);
+    ii = fftw::alloc_real<T>(n);
+    ro = fftw::alloc_real<T>(n);
+    io = fftw::alloc_real<T>(n);
+  }
+
+  ~FFTWPlanCreateC2CSplit() override {
+    fftw::free<T>(ri);
+    fftw::free<T>(ii);
+    fftw::free<T>(ro);
+    fftw::free<T>(io);
+  }
+};
 class FFTWPlanCreateR2C : public testing::Test {
 protected:
   using T = double;
@@ -34,24 +75,6 @@ protected:
   }
 
   ~FFTWPlanCreateR2C() override {
-    fftw::free<T>(in);
-    fftw::free<T>(out);
-  }
-};
-
-class FFTWPlanCreateR2R : public testing::Test {
-protected:
-  using T = double;
-  T *in;
-  T *out;
-  int n = 20;
-
-  FFTWPlanCreateR2R() {
-    in = fftw::alloc_real<T>(n);
-    out = fftw::alloc_real<T>(n);
-  }
-
-  ~FFTWPlanCreateR2R() override {
     fftw::free<T>(in);
     fftw::free<T>(out);
   }
@@ -75,6 +98,24 @@ protected:
     fftw::free<T>(in);
     fftw::free<T>(ro);
     fftw::free<T>(io);
+  }
+};
+
+class FFTWPlanCreateR2R : public testing::Test {
+protected:
+  using T = double;
+  T *in;
+  T *out;
+  int n = 20;
+
+  FFTWPlanCreateR2R() {
+    in = fftw::alloc_real<T>(n);
+    out = fftw::alloc_real<T>(n);
+  }
+
+  ~FFTWPlanCreateR2R() override {
+    fftw::free<T>(in);
+    fftw::free<T>(out);
   }
 };
 
@@ -221,12 +262,62 @@ TEST_F(FFTWPlanCreateC2C, GuruPlan) {
     ASSERT_NE(pf.plan, nullptr);
   }
 }
+TEST_F(FFTWPlanCreateC2CSplit, GuruPlanSplit) {
+  int rank = 1;
+  fftw::IODim<T> dim{.n = n, .is = 1, .os = 1};
+  int howmany = 1;
+  fftw::IODim<T> howmany_dim{.n = howmany, .is = n, .os = n};
+
+  auto pf = fftw::Plan<T>::guru_split_dft(rank, &dim, howmany, &howmany_dim, ri,
+                                          ii, ro, io, FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+}
+
+TEST_F(FFTWPlanCreateC2CSplit, GuruPlanSplitCorrect) {
+  int rank = 1;
+  fftw::IODim<T> dim{.n = n, .is = 1, .os = 1};
+  int howmany = 1;
+  fftw::IODim<T> howmany_dim{.n = howmany, .is = n, .os = n};
+
+  alignas(32) std::array<T, 20> ri = {
+      0.24800501, 0.19901191, 0.22109176, 0.65214355, 0.13190115,
+      0.83696173, 0.36607799, 0.59169134, 0.89522796, 0.03245338,
+      0.39925889, 0.93391339, 0.50966463, 0.26965452, 0.61894752,
+      0.29961656, 0.4266788,  0.03522679, 0.0617605,  0.57214474};
+  alignas(32) std::array<T, 20> ii{};
+  alignas(32) std::array<T, 20> ro{};
+  alignas(32) std::array<T, 20> io{};
+
+  std::array<T, 20> expect_ro = {
+      8.30143212, -1.4786986,  -0.28946925, 0.59119628,  0.17941478,
+      0.54434089, -0.66171488, 0.48975843,  0.12947463,  -0.9028664,
+      -0.5442037, -0.9028664,  0.12947463,  0.48975843,  -0.66171488,
+      0.54434089, 0.17941478,  0.59119628,  -0.28946925, -1.4786986};
+
+  std::array<T, 20> expect_io = {
+      0.,          -0.70254131, -0.35119795, 0.43823534,  -0.23602404,
+      1.67620125,  -0.42226181, 2.11848431,  -0.83078287, -1.10366614,
+      0.,          1.10366614,  0.83078287,  -2.11848431, 0.42226181,
+      -1.67620125, 0.23602404,  -0.43823534, 0.35119795,  0.70254131};
+
+  alignas(32) std::array<T, 20> ri_{};
+  alignas(32) std::array<T, 20> ro_{};
+
+  auto pf = fftw::Plan<T>::guru_split_dft(rank, &dim, howmany, &howmany_dim,
+                                          ri.data(), ii.data(), ro.data(),
+                                          io.data(), FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+  pf.execute();
+
+  ExpectArraysNear<T>(ro, expect_ro, 1e-7);
+  ExpectArraysNear<T>(io, expect_io, 1e-7);
+}
 
 TEST_F(FFTWPlanCreateR2C, GuruPlan) {
   {
     int rank = 1;
+    fftw::IODim<T> dim{.n = n, .is = 1, .os = 1};
     int howmany = 1;
-    fftw::IODim<T> dim{.n = n, .is = n, .os = n};
     fftw::IODim<T> howmany_dim{.n = n, .is = n, .os = n};
 
     auto pf = fftw::Plan<T>::guru_dft_r2c(rank, &dim, howmany, &howmany_dim, in,
@@ -255,9 +346,9 @@ TEST_F(FFTWPlanCreateR2C, GuruPlan) {
 
 TEST_F(FFTWPlanCreateR2CSplit, GuruPlanSplit) {
   int rank = 1;
-  fftw::IODim<T> dim{.n = n, .is = n, .os = n};
+  fftw::IODim<T> dim{.n = n, .is = 1, .os = 1};
   int howmany = 1;
-  fftw::IODim<T> howmany_dim{.n = n, .is = n, .os = n};
+  fftw::IODim<T> howmany_dim{.n = howmany, .is = n, .os = n};
 
   auto pf = fftw::Plan<T>::guru_split_dft_r2c(rank, &dim, howmany, &howmany_dim,
                                               in, ro, io, FFTW_ESTIMATE);
@@ -266,6 +357,54 @@ TEST_F(FFTWPlanCreateR2CSplit, GuruPlanSplit) {
   auto pb = fftw::Plan<T>::guru_split_dft_c2r(rank, &dim, howmany, &howmany_dim,
                                               ro, io, in, FFTW_ESTIMATE);
   ASSERT_NE(pb.plan, nullptr);
+}
+
+TEST_F(FFTWPlanCreateR2CSplit, GuruPlanSplitCorrect) {
+  int rank = 1;
+  fftw::IODim<T> dim{.n = n, .is = 1, .os = 1};
+  int howmany = 0; // For a single transform
+  fftw::IODim<T> howmany_dim{.n = howmany, .is = 1, .os = 1};
+
+  alignas(32) std::array<T, 20> in = {
+      0.24800501, 0.19901191, 0.22109176, 0.65214355, 0.13190115,
+      0.83696173, 0.36607799, 0.59169134, 0.89522796, 0.03245338,
+      0.39925889, 0.93391339, 0.50966463, 0.26965452, 0.61894752,
+      0.29961656, 0.4266788,  0.03522679, 0.0617605,  0.57214474};
+
+  std::array<T, 11> ro{};
+  std::array<T, 11> io{};
+
+  std::array<T, 11> expect_ro = {
+      8.30143212,  -1.4786986, -0.28946925, 0.59119628, 0.17941478, 0.54434089,
+      -0.66171488, 0.48975843, 0.12947463,  -0.9028664, -0.5442037};
+
+  std::array<T, 11> expect_io = {0.,          -0.70254131, -0.35119795,
+                                 0.43823534,  -0.23602404, 1.67620125,
+                                 -0.42226181, 2.11848431,  -0.83078287,
+                                 -1.10366614, 0.};
+
+  std::array<T, 20> in_{};
+
+  auto pf = fftw::Plan<T>::guru_split_dft_r2c(rank, &dim, howmany, &howmany_dim,
+                                              in.data(), ro.data(), io.data(),
+                                              FFTW_ESTIMATE);
+  ASSERT_NE(pf.plan, nullptr);
+  pf.execute();
+
+  ExpectArraysNear<T>(expect_ro, ro, 1e-7);
+  ExpectArraysNear<T>(expect_io, io, 1e-7);
+
+  auto pb = fftw::Plan<T>::guru_split_dft_c2r(rank, &dim, howmany, &howmany_dim,
+                                              ro.data(), io.data(), in_.data(),
+                                              FFTW_ESTIMATE);
+  ASSERT_NE(pb.plan, nullptr);
+  pb.execute();
+
+  T fct = 1.0 / in_.size();
+  for (double &v : in_) {
+    v *= fct;
+  }
+  ExpectArraysNear<T>(in, in_, 1e-7);
 }
 
 TEST(TestHilbert, Correct) {
