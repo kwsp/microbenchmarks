@@ -59,7 +59,7 @@ endfunction()
 add_executable_script(hilbert main.cpp)
 
 add_executable_script(hilbert_benchmarks benchmarks.cpp)
-target_link_libraries(hilbert_benchmarks PRIVATE benchmark::benchmark benchmark::benchmark_main)
+target_link_libraries(hilbert_benchmarks PRIVATE benchmark::benchmark)
 
 enable_testing()
 

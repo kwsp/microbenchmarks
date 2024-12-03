@@ -22,3 +22,15 @@ template <typename T> void BM_hilbert_fftw(benchmark::State &state) {
   hilbert_bench<T>(state, hilbert_abs<T>);
 }
 BENCHMARK(BM_hilbert_fftw<float>)->Range(2048, 8192);
+
+template <typename T> void BM_hilbert_fftw_split(benchmark::State &state) {
+  hilbert_bench<T>(state, hilbert_abs_2<T>);
+}
+BENCHMARK(BM_hilbert_fftw_split<float>)->Range(2048, 8192);
+
+int main(int argc, char **argv) {
+  fftw::WisdomSetup _fftwSetup(true);
+
+  benchmark::Initialize(&argc, argv);
+  benchmark::RunSpecifiedBenchmarks();
+}
