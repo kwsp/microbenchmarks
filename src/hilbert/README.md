@@ -13,18 +13,18 @@ CPU Caches:
 -----------------------------------------------------------------------------
 Benchmark                                   Time             CPU   Iterations
 -----------------------------------------------------------------------------
-BM_hilbert_fftw<float>/2048              5790 ns         3395 ns       340589
-BM_hilbert_fftw<float>/4096             14133 ns         9591 ns        89600
-BM_hilbert_fftw<float>/8192             45814 ns        20229 ns        44800
-BM_hilbert_fftw<double>/2048            10931 ns         7952 ns       112000
-BM_hilbert_fftw<double>/4096            32596 ns        15730 ns        40727
-BM_hilbert_fftw<double>/8192            81202 ns        46038 ns        11200
-BM_hilbert_fftw_split<float>/2048        4029 ns         1650 ns       407273
-BM_hilbert_fftw_split<float>/4096       12522 ns         6094 ns       100000
-BM_hilbert_fftw_split<float>/8192       27413 ns        12556 ns        74667
-BM_hilbert_fftw_split<double>/2048       8589 ns         5000 ns       100000
-BM_hilbert_fftw_split<double>/4096      22538 ns        12822 ns        74335
-BM_hilbert_fftw_split<double>/8192      70630 ns        36830 ns        20364
+BM_hilbert_fftw<float>/2048              5639 ns         4046 ns       224000
+BM_hilbert_fftw<float>/4096             13807 ns         9531 ns       100000
+BM_hilbert_fftw<float>/8192             41051 ns        27902 ns        28000
+BM_hilbert_fftw<double>/2048            11111 ns         7394 ns       112000
+BM_hilbert_fftw<double>/4096            32381 ns        21031 ns        49778
+BM_hilbert_fftw<double>/8192            76107 ns        47083 ns        16593
+BM_hilbert_fftw_split<float>/2048        3856 ns         2679 ns       560000
+BM_hilbert_fftw_split<float>/4096       12018 ns         7500 ns       100000
+BM_hilbert_fftw_split<float>/8192       33005 ns        23856 ns        37333
+BM_hilbert_fftw_split<double>/2048       8068 ns         6250 ns       100000
+BM_hilbert_fftw_split<double>/4096      29233 ns        19252 ns        37333
+BM_hilbert_fftw_split<double>/8192      68246 ns        39899 ns        20364
 ```
 
 ### Apple M1

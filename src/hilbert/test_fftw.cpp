@@ -481,6 +481,8 @@ TEST(TestHilbert, Correct) {
         0.83696245, 1.1476185,  0.71885109, 0.46089151, 1.07384968};
 
     hilbert_abs<T>(inp, out);
+
+    ExpectArraysNear<T>(expect.data(), out.data(), expect.size(), 1e-6);
   };
 
   fn.template operator()<double>();
@@ -499,6 +501,8 @@ TEST(TestHilbert2, Correct) {
         0.83696245, 1.1476185,  0.71885109, 0.46089151, 1.07384968};
 
     hilbert_abs_2<T>(inp, out);
+
+    ExpectArraysNear<T>(expect.data(), out.data(), expect.size(), 1e-6);
   };
 
   fn.template operator()<float>();

@@ -176,6 +176,70 @@ void hilbert_abs_cx_scale_imag_neon(T const *real, T const *imag, T fct,
 
 #endif
 
+#if defined(__AVX2__)
+
+#include <immintrin.h>
+
+template <typename T>
+void hilbert_abs_cx_scale_imag_avx2(T const *real, T const *imag, T fct,
+                                    size_t n, T *out) {
+  constexpr size_t prefetch_distance = 16;
+  size_t i = 0;
+
+  if constexpr (std::is_same_v<T, float>) {
+
+    constexpr size_t simd_width = 265 / (8 * sizeof(float));
+    const auto fct_vec = _mm256_set1_ps(fct);
+
+    for (; i + simd_width <= n; i += simd_width) {
+      if (i + prefetch_distance < n) {
+        _mm_prefetch((const char *)&real[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&imag[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&out[i + prefetch_distance], _MM_HINT_T0);
+      }
+
+      auto r_vec = _mm256_load_ps(&real[i]);
+      auto i_vec = _mm256_load_ps(&imag[i]);
+
+      i_vec = _mm256_mul_ps(i_vec, fct_vec);
+      r_vec = _mm256_mul_ps(r_vec, r_vec);
+      r_vec = _mm256_fmadd_ps(i_vec, i_vec, r_vec);
+      auto res = _mm256_sqrt_ps(r_vec);
+      _mm256_store_ps(&out[i], res);
+    }
+
+  } else if constexpr (std::is_same_v<T, double>) {
+    constexpr size_t simd_width = 265 / (8 * sizeof(double));
+    const auto fct_vec = _mm256_set1_pd(fct);
+    constexpr size_t prefetch_distance = 16;
+
+    for (; i + simd_width <= n; i += simd_width) {
+      if (i + prefetch_distance < n) {
+        _mm_prefetch((const char *)&real[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&imag[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&out[i + prefetch_distance], _MM_HINT_T0);
+      }
+
+      auto r_vec = _mm256_load_pd(&real[i]);
+      auto i_vec = _mm256_load_pd(&imag[i]);
+      i_vec = _mm256_mul_pd(i_vec, fct_vec);
+      r_vec = _mm256_mul_pd(r_vec, r_vec);
+      r_vec = _mm256_fmadd_pd(i_vec, i_vec, r_vec);
+      auto res = _mm256_sqrt_pd(r_vec);
+      _mm256_store_pd(&out[i], res);
+    }
+  }
+
+  for (; i < n; ++i) {
+    const auto ri = real[i];
+    const auto ii = imag[i] * fct;
+    const auto res = std::sqrt(ri * ri + ii * ii);
+    out[i] = res;
+  }
+}
+
+#endif
+
 template <typename T>
 void hilbert_abs_cx_scale_imag(T const *real, T const *imag, T fct, size_t n,
                                T *out) {
@@ -183,6 +247,10 @@ void hilbert_abs_cx_scale_imag(T const *real, T const *imag, T fct, size_t n,
 #if defined(__ARM_NEON__)
 
   hilbert_abs_cx_scale_imag_neon<T>(real, imag, fct, n, out);
+
+#elif defined(__AVX2__)
+
+  hilbert_abs_cx_scale_imag_avx2<T>(real, imag, fct, n, out);
 
 #else
 
