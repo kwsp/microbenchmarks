@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gbenchutils"
+version = "0.1.0"
+description = "Utilities for visualizing Google Benchmark results"
+authors = [
+    {name = "Taylor Nie", email = "tnie@wustl.edu"},
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "py-cpuinfo",
+]
+requires-python = ">= 3.10"
