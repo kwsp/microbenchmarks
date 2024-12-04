@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <armadillo>
 #include <benchmark/benchmark.h>
 
@@ -29,9 +28,7 @@ template <typename T> void shift_inplace(arma::Mat<T> &m, int shift, int dim) {
       shift += n; // To handle negative shifts
     }
 
-    if (shift == 0) {
-      return;
-    }
+    if (shift == 0) { return; }
 
     // Block swapping for rows
     const int gcd = std::gcd(shift, n);
@@ -41,12 +38,8 @@ template <typename T> void shift_inplace(arma::Mat<T> &m, int shift, int dim) {
 
       while (true) {
         int k = j + shift;
-        if (k >= n) {
-          k -= n;
-        }
-        if (k == i) {
-          break;
-        }
+        if (k >= n) { k -= n; }
+        if (k == i) { break; }
 
         m.swap_rows(j, k);
         j = k;
@@ -61,9 +54,7 @@ template <typename T> void shift_inplace(arma::Mat<T> &m, int shift, int dim) {
       shift += n; // To handle negative shifts
     }
 
-    if (shift == 0) {
-      return;
-    }
+    if (shift == 0) { return; }
 
     // Block swapping for columns
     const int gcd = std::gcd(shift, n);
@@ -73,12 +64,8 @@ template <typename T> void shift_inplace(arma::Mat<T> &m, int shift, int dim) {
 
       while (true) {
         int k = j + shift;
-        if (k >= n) {
-          k -= n;
-        }
-        if (k == i) {
-          break;
-        }
+        if (k >= n) { k -= n; }
+        if (k == i) { break; }
 
         m.swap_cols(j, k);
         j = k;
@@ -95,23 +82,30 @@ template <typename T> auto shift_arma(arma::Mat<T> &m, int shift, int dim) {
 }
 
 template <typename Func>
-void BenchmarkFunc(benchmark::State &state, Func func) {
+void BenchmarkFuncWithRet(benchmark::State &state, Func func) {
   arma::Mat<float> input(state.range(0), state.range(0), arma::fill::randu);
   for (auto _ : state) {
-    arma::shift(input, 100, 1);
-    // func(input, 100, 1);
+    volatile auto ret = func(input, 100, 1);
+  }
+}
+
+template <typename Func>
+void BenchmarkFuncNoRet(benchmark::State &state, Func func) {
+  arma::Mat<float> input(state.range(0), state.range(0), arma::fill::randu);
+  for (auto _ : state) {
+    func(input, 100, 1);
   }
 }
 
 // Benchmark for Armadillo shift
 static void BM_Shift(benchmark::State &state) {
-  BenchmarkFunc(state, shift_arma<float>);
+  BenchmarkFuncWithRet(state, shift_arma<float>);
 }
 BENCHMARK(BM_Shift)->Range(256, 4096);
 
 // Benchmark for inplace shift
 static void BM_ShiftInplace(benchmark::State &state) {
-  BenchmarkFunc(state, shift_inplace<float>);
+  BenchmarkFuncNoRet(state, shift_inplace<float>);
 }
 BENCHMARK(BM_ShiftInplace)->Range(256, 4096);
 
