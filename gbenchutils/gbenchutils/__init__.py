@@ -189,7 +189,7 @@ def plot_throughputs(
         fname_parts.append(f"k={param_2}")
     fname_parts.append(cpu.lower().replace(" ", "_"))
 
-    fname_bar = "-".join(["throughput_bar", *fname_parts]) + ".svg"
+    fname_bar = "-".join(["bar", *fname_parts]) + ".svg"
     if title:
         fname_bar = title.lower().replace(" ", "_") + "-" + fname_bar
     f.savefig(fname_bar)
@@ -231,7 +231,7 @@ def plot_throughputs(
     handles, labels = ax.get_legend_handles_labels()
     ax.legend([handles[i] for i in idx_rev], [labels[i] for i in idx_rev])
 
-    fname_line = "-".join(["throughput_line", *fname_parts]) + ".svg"
+    fname_line = "-".join(["line", *fname_parts]) + ".svg"
     if title:
         fname_line = title.lower().replace(" ", "_") + "-" + fname_line
     f.savefig(fname_line)
