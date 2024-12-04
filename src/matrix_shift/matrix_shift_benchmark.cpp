@@ -1,80 +1,23 @@
 #include <armadillo>
 #include <benchmark/benchmark.h>
 
-// Helper function to swap blocks of columns
 template <typename T>
-void swap_blocks_cols(arma::Mat<T> &m, int start1, int start2, int block_size) {
-  for (int i = 0; i < block_size; ++i) {
-    m.swap_cols(start1 + i, start2 + i);
+[[nodiscard]] arma::Mat<T> fast_shift_columns(const arma::Mat<T> &matrix,
+                                              int shift) {
+  arma::Mat<T> result(matrix.n_rows, matrix.n_cols, arma::fill::none);
+
+  shift = shift % matrix.n_rows;
+  if (shift < 0) {
+    shift += matrix.n_rows; // Handle negative shifts
   }
-}
 
-// Helper function to swap blocks of rows
-template <typename T>
-void swap_blocks_rows(arma::Mat<T> &m, int start1, int start2, int block_size) {
-  for (int i = 0; i < block_size; ++i) {
-    m.swap_rows(start1 + i, start2 + i);
-  }
-}
+  // Split and reorder rows
+  result.rows(0, shift - 1) =
+      matrix.rows(matrix.n_rows - shift, matrix.n_rows - 1);
+  result.rows(shift, matrix.n_rows - 1) =
+      matrix.rows(0, matrix.n_rows - shift - 1);
 
-// In-place shift for arma::mat using block swapping (shifts along specified
-// dimension)
-template <typename T> void shift_inplace(arma::Mat<T> &m, int shift, int dim) {
-  if (dim == 0) // Shift rows
-  {
-    int n = m.n_rows;
-    shift = shift % n; // To handle shifts greater than the number of rows
-    if (shift < 0) {
-      shift += n; // To handle negative shifts
-    }
-
-    if (shift == 0) { return; }
-
-    // Block swapping for rows
-    const int gcd = std::gcd(shift, n);
-    for (int i = 0; i < gcd; ++i) {
-      const int temp = m(i, 0);
-      int j = i;
-
-      while (true) {
-        int k = j + shift;
-        if (k >= n) { k -= n; }
-        if (k == i) { break; }
-
-        m.swap_rows(j, k);
-        j = k;
-      }
-      m(j, 0) = temp;
-    }
-  } else if (dim == 1) // Shift columns
-  {
-    const int n = m.n_cols;
-    shift = shift % n; // To handle shifts greater than the number of columns
-    if (shift < 0) {
-      shift += n; // To handle negative shifts
-    }
-
-    if (shift == 0) { return; }
-
-    // Block swapping for columns
-    const int gcd = std::gcd(shift, n);
-    for (int i = 0; i < gcd; ++i) {
-      int temp = m(0, i);
-      int j = i;
-
-      while (true) {
-        int k = j + shift;
-        if (k >= n) { k -= n; }
-        if (k == i) { break; }
-
-        m.swap_cols(j, k);
-        j = k;
-      }
-      m(0, j) = temp;
-    }
-  } else {
-    throw std::invalid_argument("Dimension must be 0 (rows) or 1 (columns).");
-  }
+  return result;
 }
 
 template <typename T> auto shift_arma(arma::Mat<T> &m, int shift, int dim) {
@@ -104,9 +47,12 @@ static void BM_Shift(benchmark::State &state) {
 BENCHMARK(BM_Shift)->Range(256, 4096);
 
 // Benchmark for inplace shift
-static void BM_ShiftInplace(benchmark::State &state) {
-  BenchmarkFuncNoRet(state, shift_inplace<float>);
+static void BM_FastShiftColumns(benchmark::State &state) {
+  arma::Mat<float> input(state.range(0), state.range(0), arma::fill::randu);
+  for (auto _ : state) {
+    volatile auto ret = fast_shift_columns(input, 100);
+  }
 }
-BENCHMARK(BM_ShiftInplace)->Range(256, 4096);
+BENCHMARK(BM_FastShiftColumns)->Range(256, 4096);
 
 BENCHMARK_MAIN();
