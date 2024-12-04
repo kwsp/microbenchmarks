@@ -7,15 +7,15 @@ Compiler: MSVC 19.40.33812
 Kernel size = 165
 
 <p align="center">
-<img src="./plots/conv1d-bar-k=165-13th_gen_intelr_coretm_i9-13900K.svg" width="45%">
-<img src="./plots/conv1d-line-k=165-13th_gen_intelr_coretm_i9-13900K.svg" width="45%">
+<img src="./plots/conv1d-bar-k=165-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+<img src="./plots/conv1d-line-k=165-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
 </p>
 
 Kernel size = 245
 
 <p align="center">
-<img src="./plots/conv1d-bar-k=245-13th_gen_intelr_coretm_i9-13900K.svg" width="45%">
-<img src="./plots/conv1d-line-k=245-13th_gen_intelr_coretm_i9-13900K.svg" width="45%">
+<img src="./plots/conv1d-bar-k=245-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+<img src="./plots/conv1d-line-k=245-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
 </p>
 
 ### AMD
