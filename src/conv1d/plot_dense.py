@@ -93,8 +93,11 @@ REPLACE = {
     "Accelerate_vDSP": "Apple Accelerate",
 }
 
+import importlib
 
-gbenchutils.plot_throughputs_bar(
+importlib.reload(gbenchutils)
+
+gbenchutils.plot_throughputs(
     benchmarks,
     param_2,
     title="conv1d",

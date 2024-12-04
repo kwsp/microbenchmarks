@@ -96,7 +96,7 @@ def benchmark_parse_parameters(benchmark: pd.DataFrame) -> pd.DataFrame:
     return benchmark
 
 
-def plot_throughputs_bar(
+def plot_throughputs(
     benchmarks: pd.DataFrame,
     param_2: int | None = None,
     replace_name: dict[str, str] = {},
@@ -108,7 +108,7 @@ def plot_throughputs_bar(
     xlabel="Throughput (MS/s)",
 ):
     """
-    Generate a bar chart and line chart of function throughputs from the benchmark output from Google Benchmark.
+    Generate a bar chart and a line chart of function throughputs from the benchmark output from Google Benchmark.
 
     `param_1` will be on the x-axis and `func_name` will be on the y-axis. Optionally add more data points with the param `pylib_throughputs`, where the array should contain throughputs over `param_1` for every function provided.
 
@@ -178,19 +178,22 @@ def plot_throughputs_bar(
     if param_2 is not None:
         title_parts.append(f"k = {param_2}")
 
-    plot_title = "\n".join(title_parts)
-    ax.set_title(plot_title)
+    ax.set_title("\n".join(title_parts))
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     f.tight_layout()
 
+    fname_parts = []
     if param_2:
-        filename = f"Throughput Bar (k={param_2}) {cpu}.svg"
-    else:
-        filename = f"Throughput Bar {cpu}.svg"
-    f.savefig(filename)
-    print(f"Bar plot saved to {filename}")
+        fname_parts.append(f"k={param_2}")
+    fname_parts.append(cpu.lower().replace(" ", "_"))
+
+    fname_bar = "-".join(["throughput_bar", *fname_parts]) + ".svg"
+    if title:
+        fname_bar = title.lower().replace(" ", "_") + "-" + fname_bar
+    f.savefig(fname_bar)
+    print(f"Bar plot saved to {fname_bar}")
 
     ### Plot  throughputs line
     f, ax = plt.subplots()
@@ -220,19 +223,17 @@ def plot_throughputs_bar(
     if param_2:
         title_parts.append(f"k = {param_2}")
 
-    title = "\n".join(title_parts)
-    ax.set_title(title)
+    ax.set_title("\n".join(title_parts))
     ax.set_xlabel("N")
     f.tight_layout()
-    f.savefig(f"dense2_nolegend {cpu}.png")
 
     idx_rev = idx[::-1]
     handles, labels = ax.get_legend_handles_labels()
     ax.legend([handles[i] for i in idx_rev], [labels[i] for i in idx_rev])
 
-    if param_2:
-        fname = f"Throughput Line (k={param_2}) {cpu}.svg"
-    else:
-        fname = f"Throughput Line {cpu}.svg"
-    f.savefig(fname)
-    print(f"Line plot saved to {fname}")
+    fname_line = "-".join(["throughput_line", *fname_parts]) + ".svg"
+    if title:
+        fname_line = title.lower().replace(" ", "_") + "-" + fname_line
+    f.savefig(fname_line)
+
+    print(f"Line plot saved to {fname_line}")
