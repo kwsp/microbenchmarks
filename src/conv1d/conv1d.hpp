@@ -17,7 +17,7 @@
 #endif
 
 // Intel IPP
-#ifdef CONV1D_HAS_IPP
+#ifdef HAS_IPP
 #include <ipp.h>
 
 inline void get_ipp_version() {
@@ -35,9 +35,7 @@ inline void get_ipp_version() {
   Ipp64u enabledFeatures{};
 
   status = ippGetCpuFeatures(&cpuFeatures, nullptr);
-  if (status != ippStsNoErr) {
-    return;
-  }
+  if (status != ippStsNoErr) { return; }
   enabledFeatures = ippGetEnabledCpuFeatures();
 
   const auto printInfo = [cpuFeatures, enabledFeatures](int feature,
@@ -106,15 +104,11 @@ void conv1d_IPP(const std::span<const T> input, const std::span<const T> kernel,
 
   status = ippsConvolveGetBufferSize(input.size(), kernel.size(), dataType,
                                      algType, &bufSizeWant);
-  if (status != ippStsNoErr) {
-    return;
-  }
+  if (status != ippStsNoErr) { return; }
 
   // Only allocate buffer if current size different from existing size
   if (bufSizeWant != bufSize) {
-    if (pBuffer != nullptr) {
-      ippsFree(pBuffer);
-    }
+    if (pBuffer != nullptr) { ippsFree(pBuffer); }
     pBuffer = ippsMalloc_8u(bufSizeWant);
     bufSize = bufSizeWant;
   }

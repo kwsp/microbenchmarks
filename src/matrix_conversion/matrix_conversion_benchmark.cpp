@@ -1,7 +1,8 @@
 #include <armadillo>
 #include <benchmark/benchmark.h>
 #include <opencv2/opencv.hpp>
-#include <vector>
+
+// NOLINTBEGIN(*-pointer-arithmetic, *-magic-numbers)
 
 // Function to convert matrix using Armadillo's conv_to
 void ArmadilloConversion(const arma::Mat<uint16_t> &input,
@@ -34,7 +35,8 @@ void OpenMPConversion(const arma::Mat<uint16_t> &input,
 void OpenCVParallelConversion1(const arma::Mat<uint16_t> &input,
                                arma::Mat<double> &output) {
   output.set_size(input.n_rows, input.n_cols);
-  cv::parallel_for_(cv::Range(0, input.n_elem), [&](const cv::Range &range) {
+  const cv::Range range(0, static_cast<int>(input.n_elem));
+  cv::parallel_for_(range, [&](const cv::Range &range) {
     for (int i = range.start; i < range.end; ++i) {
       output.memptr()[i] = static_cast<double>(input.mem[i]);
     }
@@ -45,7 +47,8 @@ void OpenCVParallelConversion1(const arma::Mat<uint16_t> &input,
 void OpenCVParallelConversion2(const arma::Mat<uint16_t> &input,
                                arma::Mat<double> &output) {
   output.set_size(input.n_rows, input.n_cols);
-  cv::parallel_for_(cv::Range(0, input.n_cols), [&](const cv::Range &range) {
+  const cv::Range range(0, static_cast<int>(input.n_cols));
+  cv::parallel_for_(range, [&](const cv::Range &range) {
     for (int col = range.start; col < range.end; ++col) {
       const auto *inptr = input.colptr(col);
       auto *outptr = output.colptr(col);
@@ -121,9 +124,11 @@ BENCHMARK(BM_OpenCVParallelConversion2)->Range(256, 4096);
 
 template <typename Func>
 void BenchmarkCvFunc(benchmark::State &state, Func func) {
-  cv::Mat input(state.range(0), state.range(0), CV_16UC1);
+  cv::Mat input(static_cast<int>(state.range(0)),
+                static_cast<int>(state.range(0)), CV_16UC1);
   cv::randu(input, 0, 1);
-  cv::Mat output(state.range(0), state.range(0), CV_64F);
+  cv::Mat output(static_cast<int>(state.range(0)),
+                 static_cast<int>(state.range(0)), CV_64F);
   for (auto _ : state) {
     func(input, output);
   }
@@ -142,3 +147,5 @@ static void BM_OpenCVMatParallelConversion(benchmark::State &state) {
 BENCHMARK(BM_OpenCVMatParallelConversion)->Range(256, 4096);
 
 BENCHMARK_MAIN();
+
+// NOLINTEND(*-pointer-arithmetic, *-magic-numbers)

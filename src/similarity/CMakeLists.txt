@@ -43,7 +43,7 @@ function(add_executable_script EXE_NAME)
 
   if (IPP_FOUND)
     target_link_libraries(${EXE_NAME} PRIVATE ${IPP_LIBRARIES})
-    target_compile_definitions(${EXE_NAME} PRIVATE -DCONV1D_HAS_IPP)
+    target_compile_definitions(${EXE_NAME} PRIVATE -DHAS_IPP)
   endif()
   
   if (APPLE)

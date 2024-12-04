@@ -9,6 +9,8 @@ A C++ FFTW wrapper
 #include <type_traits>
 #include <unordered_map>
 
+// NOLINTBEGIN(*-pointer-arithmetic, *-macro-usage)
+
 namespace fftw {
 
 const static unsigned int FLAGS = FFTW_ESTIMATE;
@@ -17,7 +19,7 @@ const static unsigned int FLAGS = FFTW_ESTIMATE;
 // and tearing down FFTW3 (threads and wisdom)
 // NOLINTNEXTLINE(*-special-member-functions)
 struct WisdomSetup {
-  WisdomSetup(bool threadSafe) {
+  explicit WisdomSetup(bool threadSafe) {
     static bool callSetup = true;
     if (threadSafe && callSetup) {
       fftw_make_planner_thread_safe();
@@ -514,7 +516,7 @@ struct EngineDFTSplit1D : public cache_mixin<EngineDFTSplit1D<T>> {
   Plan plan_backward;
 
   explicit EngineDFTSplit1D(size_t n)
-      : buf(n), dim(IODim<T>{.n = (int)n, .is = 1, .os = 1}),
+      : buf(n), dim(IODim<T>{.n = static_cast<int>(n), .is = 1, .os = 1}),
         plan_forward(Plan::guru_split_dft(1, &dim, 0, nullptr, buf.ri, buf.ii,
                                           buf.ro, buf.io, FLAGS)),
         plan_backward(Plan::guru_split_dft(1, &dim, 0, nullptr, buf.io, buf.ro,
@@ -581,3 +583,5 @@ template <typename t> inline void normalize(t *in, size_t len, t fct) {
 }
 
 } // namespace fftw
+
+// NOLINTEND(*-pointer-arithmetic, *-macro-usage)

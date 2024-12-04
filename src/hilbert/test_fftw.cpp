@@ -3,7 +3,8 @@
 #include <array>
 #include <gtest/gtest.h>
 
-// NOLINTBEGIN(*-magic-numbers, *-pointer-arithmetic)
+// NOLINTBEGIN(*-magic-numbers, *-pointer-arithmetic, *-non-private-member-*,
+// *-member-function, *-destructor)
 
 template <typename T>
 inline void ExpectArraysNear(const T *arr1, const T *arr2, size_t size,
@@ -509,4 +510,5 @@ TEST(TestHilbert2, Correct) {
   fn.template operator()<double>();
 }
 
-// NOLINTEND(*-magic-numbers, *-pointer-arithmetic)
+// NOLINTEND(*-magic-numbers, *-pointer-arithmetic, *-non-private-member-*,
+// *-member-function, *-destructor)

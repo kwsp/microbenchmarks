@@ -2,10 +2,6 @@
 #include <Eigen/Dense>
 #include <iostream>
 
-#ifdef CONV1D_HAS_IPP
-#include <ipp.h>
-#endif
-
 // NOLINTBEGIN(*-magic-numbers)
 
 template <typename T> std::span<T> to_span(Eigen::VectorX<T> &vec) {

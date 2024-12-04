@@ -3,28 +3,9 @@
 #include <benchmark/benchmark.h>
 #include <fftconv.hpp>
 #include <fftw.hpp>
-#include <utility>
 #include <vector>
 
 #define RUN_ALL
-
-// // NOLINTNEXTLIE(*-magic-numbers)
-// const std::vector<std::pair<int64_t, int64_t>> RANGES{
-//     {{2 << 7, 2 << 12}, {15, 95}},
-// };
-
-// const std::vector<std::vector<int64_t>> ARGS{
-//     {
-//         2048,
-//         4096,
-//         8192,
-//     },
-//     {
-//         65,
-//         95,
-//         145,
-//     },
-// };
 
 const std::vector<std::vector<int64_t>> ARGS{
     {
@@ -50,10 +31,6 @@ const std::vector<std::vector<int64_t>> ARGS{
         245,
     },
 };
-
-// NOLINTNEXTLIE(*-magic-numbers)
-// const std::vector<std::pair<int64_t, int64_t>> RANGES{
-//     {{2 << 11, 2 << 11}, {65, 65}}};
 
 /*
 Helpers
@@ -185,7 +162,7 @@ void BM_conv1d_fftconv_oa_same(benchmark::State &state) {
 }
 // BENCHMARK(BM_conv1d_fftconv_oa_same<double>)->ArgsProduct(ARGS);
 
-#ifdef CONV1D_HAS_IPP
+#ifdef HAS_IPP
 
 template <fftconv::FloatOrDouble Real>
 void BM_conv1d_ipp_full_direct(benchmark::State &state) {
@@ -215,7 +192,7 @@ BENCHMARK(BM_conv1d_Accelerate_vDSP<double>)->ArgsProduct(ARGS);
 #endif
 
 int main(int argc, char **argv) {
-  fftw::WisdomSetup fftwWisdom();
+  fftw::WisdomSetup fftwWisdom;
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();

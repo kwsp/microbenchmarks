@@ -3,6 +3,8 @@
 #include <armadillo>
 #include <benchmark/benchmark.h>
 
+// NOLINTBEGIN(*-magic-numbers)
+
 template <typename T, typename Func>
 void hilbert_bench(benchmark::State &state, Func hilbert_func) {
   Eigen::VectorX<T> inp(state.range(0));
@@ -36,3 +38,5 @@ int main(int argc, char **argv) {
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
 }
+
+// NOLINTEND(*-magic-numbers)

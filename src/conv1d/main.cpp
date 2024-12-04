@@ -2,7 +2,7 @@
 #include "fftconv.hpp"
 #include <fftw3.h>
 
-#ifdef CONV1D_HAS_IPP
+#ifdef HAS_IPP
 #include <ipp.h>
 #endif
 
@@ -10,17 +10,13 @@
 
 int main(int argc, char *argv[]) {
 
-#ifdef CONV1D_HAS_IPP
+#ifdef HAS_IPP
   ippInit();
   get_ipp_version();
 #endif
 
-  if (fftw_init_threads() != 0) {
-    fmt::println("fftw_init_threads failed.");
-  }
-  if (fftwf_init_threads() != 0) {
-    fmt::println("fftwf_init_threads failed.");
-  }
+  if (fftw_init_threads() != 0) { fmt::println("fftw_init_threads failed."); }
+  if (fftwf_init_threads() != 0) { fmt::println("fftwf_init_threads failed."); }
   fftw_plan_with_nthreads(8);
   fftwf_plan_with_nthreads(8);
 
@@ -116,7 +112,7 @@ int main(int argc, char *argv[]) {
     fmt::println("Output: {}", fmt::join(output, ", "));
   }
 
-#ifdef CONV1D_HAS_IPP
+#ifdef HAS_IPP
 
   {
     std::vector<T> output(output_size_full, 0);

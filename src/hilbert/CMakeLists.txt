@@ -3,8 +3,6 @@ find_package(benchmark CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
-find_package(OpenBLAS CONFIG REQUIRED)
-find_package(KFR CONFIG REQUIRED)
 find_package(FFTW3 CONFIG REQUIRED)
 find_package(FFTW3f CONFIG REQUIRED)
 find_package(OpenCV CONFIG REQUIRED)
@@ -37,18 +35,12 @@ function(add_executable_script EXE_NAME)
     Eigen3::Eigen
     FFTW3::fftw3
     FFTW3::fftw3f
-    kfr
-    kfr_dsp
     opencv_world
   )
 
   if (IPP_FOUND)
     target_link_libraries(${EXE_NAME} PRIVATE ${IPP_LIBRARIES})
-    target_compile_definitions(${EXE_NAME} PRIVATE -DCONV1D_HAS_IPP)
-  endif()
-  
-  if (APPLE)
-    target_link_libraries(${EXE_NAME} PRIVATE kfr_dsp_neon64)
+    target_compile_definitions(${EXE_NAME} PRIVATE -DHAS_IPP)
   endif()
 
   target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
