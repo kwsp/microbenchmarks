@@ -246,7 +246,7 @@ def plot_throughputs(
 
     if pylib_throughputs:
         for name, throughputs in pylib_throughputs:
-            ydata = throughputs * 1e-6
+            ydata = throughputs * tp_scaler
             ax.scatter(xdata, ydata, label=name, marker="x")
             ax.plot(xdata, ydata)
 
