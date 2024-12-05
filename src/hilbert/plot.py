@@ -7,7 +7,6 @@ context, benchmarks, xdata = load_benchmarks_from_default_build_dir("output.json
 
 benchmarks.head()
 
-
 # %%
 from tqdm import tqdm
 import numpy as np
@@ -30,6 +29,7 @@ def measure_throughput_np(func: callable, N: int | list[int], iterations=10000):
 
 # %%
 from scipy import signal
+import scipy as sp
 
 
 def np_sp_hilbert(x):
@@ -42,7 +42,6 @@ np_throughput
 
 # %%
 import importlib
-import scipy as sp
 
 importlib.reload(gbenchutils)
 
@@ -70,6 +69,9 @@ fig = gbenchutils.plot_throughputs(
     title="Hilbert float32",
     pylib_throughputs=pylib_throughputs,
 )
+
+# %%
+benchmarks
 
 # %%
 

@@ -50,8 +50,8 @@ add_executable_script(hilbert main.cpp)
 add_executable_script(hilbert_bench benchmarks.cpp)
 target_link_libraries(hilbert_bench PRIVATE benchmark::benchmark)
 
-add_executable_script(scale_and_mag_bench benchmark_scale_and_mag.cpp)
-target_link_libraries(scale_and_mag_bench PRIVATE benchmark::benchmark)
+add_executable_script(ScaleAndMag_bench benchmark_scale_and_mag.cpp)
+target_link_libraries(ScaleAndMag_bench PRIVATE benchmark::benchmark)
 
 enable_testing()
 
