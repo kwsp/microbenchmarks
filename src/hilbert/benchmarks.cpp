@@ -37,11 +37,15 @@ template <typename T> void BM_hilbert_fftw_split(benchmark::State &state) {
 BENCHMARK(BM_hilbert_fftw_split<float>)->Range(2048, 8192);
 BENCHMARK(BM_hilbert_fftw_split<double>)->Range(2048, 8192);
 
+#if defined(HAS_IPP)
+
 template <typename T> void BM_hilbert_ipp(benchmark::State &state) {
   hilbert_bench<T>(state, hilbert_ipp<T>);
 }
 BENCHMARK(BM_hilbert_ipp<float>)->Range(2048, 8192);
 BENCHMARK(BM_hilbert_ipp<double>)->Range(2048, 8192);
+
+#endif
 
 int main(int argc, char **argv) {
   fftw::WisdomSetup _fftwSetup(true);

@@ -81,7 +81,7 @@ Scale and magnitude
 importlib.reload(gbenchutils)
 
 context, benchmarks, xdata = load_benchmarks_from_default_build_dir(
-    "output_scale_and_mag.json"
+    "output_ScaleAndMag.json"
 )
 
 fig = gbenchutils.plot_throughputs(
