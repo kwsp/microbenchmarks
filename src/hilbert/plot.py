@@ -42,22 +42,59 @@ np_throughput
 
 # %%
 import importlib
+import scipy as sp
 
 importlib.reload(gbenchutils)
 
 pylib_throughputs = [
-    (f"Numpy {np.__version__}", np_throughput),
+    (f"Numpy {np.__version__}\n+ Scipy {sp.__version__}", np_throughput),
 ]
 
-replace_name = {}
+replace_name = {
+    "fftw_split": "fftw (split transform)",
+    "ipp": "Intel IPP",
+}
 
-fig = gbenchutils.plot_throughputs_bar(
+fig = gbenchutils.plot_throughputs(
     benchmarks[benchmarks["template_param_1"] == "double"],
     replace_name=replace_name,
-    highlight_name="fftw",
-    title="Hilbert",
+    highlight_name="fftw (split transform)",
+    title="Hilbert float64",
     pylib_throughputs=pylib_throughputs,
-    xlim=200,
+)
+
+fig = gbenchutils.plot_throughputs(
+    benchmarks[benchmarks["template_param_1"] == "float"],
+    replace_name=replace_name,
+    highlight_name="fftw (split transform)",
+    title="Hilbert float32",
+    pylib_throughputs=pylib_throughputs,
 )
 
 # %%
+
+"""
+Scale and magnitude
+"""
+importlib.reload(gbenchutils)
+
+context, benchmarks, xdata = load_benchmarks_from_default_build_dir(
+    "output_scale_and_mag.json"
+)
+
+fig = gbenchutils.plot_throughputs(
+    benchmarks[benchmarks["template_param_1"] == "double"],
+    replace_name=replace_name,
+    highlight_name="fftw (split transform)",
+    title="ScaleAndMag float64",
+)
+
+fig = gbenchutils.plot_throughputs(
+    benchmarks[benchmarks["template_param_1"] == "float"],
+    replace_name=replace_name,
+    highlight_name="fftw (split transform)",
+    title="ScaleAndMag float32",
+)
+
+# %%
+benchmarks

@@ -2,30 +2,19 @@
 
 ### Intel i9-13900K
 
-```
-Running C:\src\microbenches\build\cl\src\hilbert\Release\hilbert_benchmarks.exe
-Run on (32 X 2995 MHz CPU s)
-CPU Caches:
-  L1 Data 48 KiB (x16)
-  L1 Instruction 32 KiB (x16)
-  L2 Unified 2048 KiB (x16)
-  L3 Unified 36864 KiB (x1)
------------------------------------------------------------------------------
-Benchmark                                   Time             CPU   Iterations
------------------------------------------------------------------------------
-BM_hilbert_fftw<float>/2048              5639 ns         4046 ns       224000
-BM_hilbert_fftw<float>/4096             13807 ns         9531 ns       100000
-BM_hilbert_fftw<float>/8192             41051 ns        27902 ns        28000
-BM_hilbert_fftw<double>/2048            11111 ns         7394 ns       112000
-BM_hilbert_fftw<double>/4096            32381 ns        21031 ns        49778
-BM_hilbert_fftw<double>/8192            76107 ns        47083 ns        16593
-BM_hilbert_fftw_split<float>/2048        3856 ns         2679 ns       560000
-BM_hilbert_fftw_split<float>/4096       12018 ns         7500 ns       100000
-BM_hilbert_fftw_split<float>/8192       33005 ns        23856 ns        37333
-BM_hilbert_fftw_split<double>/2048       8068 ns         6250 ns       100000
-BM_hilbert_fftw_split<double>/4096      29233 ns        19252 ns        37333
-BM_hilbert_fftw_split<double>/8192      68246 ns        39899 ns        20364
-```
+**Float32**
+
+<p align="center">
+<img src="./plots/hilbert_float32-bar-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+<img src="./plots/hilbert_float32-line-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+</p>
+
+**Float64**
+
+<p align="center">
+<img src="./plots/hilbert_float64-bar-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+<img src="./plots/hilbert_float64-line-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+</p>
 
 ### Apple M1
 
@@ -57,3 +46,21 @@ BM_hilbert_fftw_split<double>/2048      16273 ns        16273 ns        43062
 BM_hilbert_fftw_split<double>/4096      36966 ns        36965 ns        18971
 BM_hilbert_fftw_split<double>/8192      80351 ns        80346 ns         8685
 ```
+
+## Scale and magnitude
+
+### Intel i9-13900K
+
+**Float32**
+
+<p align="center">
+<img src="./plots/scaleandmag_float32-bar-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+<img src="./plots/scaleandmag_float32-line-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+</p>
+
+**Float64**
+
+<p align="center">
+<img src="./plots/scaleandmag_float64-bar-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+<img src="./plots/scaleandmag_float64-line-13th_gen_intelr_coretm_i9-13900k.svg" width="45%">
+</p>

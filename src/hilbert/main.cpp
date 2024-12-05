@@ -1,31 +1,52 @@
+#include "aligned_vector.hpp"
 #include "hilbert.hpp"
-#include <Eigen/Dense>
-#include <iostream>
+#include <cmath>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <numbers>
+#include <opencv2/core/base.hpp>
 
 // NOLINTBEGIN(*-magic-numbers)
 
-template <typename T> std::span<T> to_span(Eigen::VectorX<T> &vec) {
-  return {vec.data(), static_cast<size_t>(vec.size())};
-}
-
-template <typename T>
-std::span<const T> to_cspan(const Eigen::VectorX<T> &vec) {
-  return {vec.data(), static_cast<size_t>(vec.size())};
-}
-
 int main(int argc, char *argv[]) {
-  using T = double;
+  using T = float;
   constexpr int N = 10;
 
-  Eigen::VectorX<T> inp(N);
-  inp.setRandom();
+  AlignedVector<T> in(N);
+  for (int i = 0; i < N; ++i) {
+    in[i] = std::cos(std::numbers::pi_v<T> * 4 * i / (N - 1));
+  }
 
   {
-    Eigen::VectorX<T> out(N);
-    hilbert_abs<T>(to_cspan(inp), to_span(out));
-    std::cout << "inp: " << inp << "\n";
-    std::cout << "hilbert_abs out: " << out << "\n";
+    AlignedVector<T> out(N);
+    hilbert_fftw<T>(in, out);
+
+    fmt::println("=== hilbert_fftw ===");
+    fmt::println("In: {}", fmt::join(in, ", "));
+    fmt::println("Out: {}", fmt::join(out, ", "));
   }
+
+  {
+    AlignedVector<T> out(N);
+    hilbert_fftw_split<T>(in, out);
+
+    fmt::println("=== hilbert_fftw_split ===");
+    fmt::println("In: {}", fmt::join(in, ", "));
+    fmt::println("Out: {}", fmt::join(out, ", "));
+  }
+
+#if defined(HAS_IPP)
+
+  {
+    AlignedVector<T> out(N);
+    hilbert_ipp<T>(in, out);
+
+    fmt::println("=== IPP ===");
+    fmt::println("In: {}", fmt::join(in, ", "));
+    fmt::println("Out: {}", fmt::join(out, ", "));
+  }
+
+#endif
 }
 
 // NOLINTEND(*-magic-numbers)

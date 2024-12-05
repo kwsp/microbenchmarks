@@ -24,9 +24,6 @@ function(add_executable_script EXE_NAME)
     # Use Accelerate
     target_compile_definitions(${EXE_NAME} PRIVATE -DACCELERATE_NEW_LAPACK)
     target_link_libraries(${EXE_NAME} PRIVATE "-framework Accelerate")
-  else()
-    # Use OpenBLAS
-    target_link_libraries(${EXE_NAME} PRIVATE OpenBLAS::OpenBLAS)
   endif()
 
   target_link_libraries(${EXE_NAME} PRIVATE
@@ -50,8 +47,11 @@ endfunction()
 
 add_executable_script(hilbert main.cpp)
 
-add_executable_script(hilbert_benchmarks benchmarks.cpp)
-target_link_libraries(hilbert_benchmarks PRIVATE benchmark::benchmark)
+add_executable_script(hilbert_bench benchmarks.cpp)
+target_link_libraries(hilbert_bench PRIVATE benchmark::benchmark)
+
+add_executable_script(scale_and_mag_bench benchmark_scale_and_mag.cpp)
+target_link_libraries(scale_and_mag_bench PRIVATE benchmark::benchmark)
 
 enable_testing()
 

@@ -470,7 +470,7 @@ TEST(FFTWEngineDFTSplit1D, Correct) {
   fn.template operator()<double>();
 }
 
-TEST(TestHilbert, Correct) {
+TEST(TestHilbertFFTW, Correct) {
   const auto fn = [&]<typename T>() {
     const std::array<T, 10> inp = {
         -0.999984, -0.736924, 0.511211, -0.0826997, 0.0655345,
@@ -481,7 +481,7 @@ TEST(TestHilbert, Correct) {
         1.45197493, 1.15365169, 0.54703078, 0.27346519, 0.15097965,
         0.83696245, 1.1476185,  0.71885109, 0.46089151, 1.07384968};
 
-    hilbert_abs<T>(inp, out);
+    hilbert_fftw<T>(inp, out);
 
     ExpectArraysNear<T>(expect.data(), out.data(), expect.size(), 1e-6);
   };
@@ -490,7 +490,7 @@ TEST(TestHilbert, Correct) {
   fn.template operator()<float>();
 }
 
-TEST(TestHilbert2, Correct) {
+TEST(TestHilbertFFTWSplit, Correct) {
   const auto fn = [&]<typename T>() {
     const std::array<T, 10> inp = {
         -0.999984, -0.736924, 0.511211, -0.0826997, 0.0655345,
@@ -501,7 +501,7 @@ TEST(TestHilbert2, Correct) {
         1.45197493, 1.15365169, 0.54703078, 0.27346519, 0.15097965,
         0.83696245, 1.1476185,  0.71885109, 0.46089151, 1.07384968};
 
-    hilbert_abs_2<T>(inp, out);
+    hilbert_fftw_split<T>(inp, out);
 
     ExpectArraysNear<T>(expect.data(), out.data(), expect.size(), 1e-6);
   };
@@ -512,3 +512,9 @@ TEST(TestHilbert2, Correct) {
 
 // NOLINTEND(*-magic-numbers, *-pointer-arithmetic, *-non-private-member-*,
 // *-member-function, *-destructor)
+
+int main(int argc, char **argv) {
+  fftw::WisdomSetup wisdom(false);
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

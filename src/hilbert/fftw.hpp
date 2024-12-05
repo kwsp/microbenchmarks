@@ -9,11 +9,20 @@ A C++ FFTW wrapper
 #include <type_traits>
 #include <unordered_map>
 
+#if defined(__AVX2__)
+#include <immintrin.h>
+#endif
+
+#if defined(__ARM_NEON__)
+#include <arm_neon.h>
+#endif
+
 // NOLINTBEGIN(*-pointer-arithmetic, *-macro-usage)
 
 namespace fftw {
 
-const static unsigned int FLAGS = FFTW_ESTIMATE;
+// const static unsigned int FLAGS = FFTW_ESTIMATE;
+const static unsigned int FLAGS = FFTW_EXHAUSTIVE;
 
 // Place this at the beginning of main() and RAII will take care of setting up
 // and tearing down FFTW3 (threads and wisdom)
@@ -188,8 +197,8 @@ template <typename T> struct Plan {
                          COMMA unsigned int flags,
                      n0 COMMA n1 COMMA in COMMA out COMMA flags)
   PLAN_CREATE_METHOD(dft_c2r_3d,
-                     int n0 COMMA int n1 COMMA int n2 COMMA Complex<T> *in COMMA
-                         T *out COMMA unsigned int flags,
+                     int n0 COMMA int n1 COMMA int n2 COMMA Complex<T> *in
+                         COMMA T *out COMMA unsigned int flags,
                      n0 COMMA n1 COMMA n2 COMMA in COMMA out COMMA flags)
   PLAN_CREATE_METHOD(dft_c2r,
                      int rank COMMA int *n COMMA Complex<T> *in COMMA T *out
@@ -251,9 +260,9 @@ template <typename T> struct Plan {
   PLAN_CREATE_METHOD(
       many_dft_c2r,
       int rank COMMA const int *n COMMA int howmany COMMA Complex<T> *in
-          COMMA const int *inembed COMMA int istride COMMA int idist COMMA
-              T *out COMMA const int *onembed COMMA int ostride COMMA int odist
-                  COMMA unsigned flags,
+          COMMA const int *inembed COMMA int istride COMMA int idist
+              COMMA T *out COMMA const int *onembed COMMA int ostride
+                  COMMA int odist COMMA unsigned flags,
       rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
           idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA flags)
 
@@ -264,9 +273,9 @@ template <typename T> struct Plan {
   PLAN_CREATE_METHOD(
       many_r2r,
       int rank COMMA const int *n COMMA int howmany COMMA T *in
-          COMMA const int *inembed COMMA int istride COMMA int idist COMMA
-              T *out COMMA const int *onembed COMMA int ostride COMMA int odist
-                  COMMA R2RKind<T> *kind COMMA unsigned flags,
+          COMMA const int *inembed COMMA int istride COMMA int idist
+              COMMA T *out COMMA const int *onembed COMMA int ostride
+                  COMMA int odist COMMA R2RKind<T> *kind COMMA unsigned flags,
       rank COMMA n COMMA howmany COMMA in COMMA inembed COMMA istride COMMA
           idist COMMA out COMMA onembed COMMA ostride COMMA odist COMMA kind
               COMMA flags)
@@ -291,15 +300,15 @@ template <typename T> struct Plan {
           COMMA sign COMMA flags)
   PLAN_CREATE_METHOD(guru_split_dft,
                      int rank COMMA const IODim<T> *dims COMMA int howmany_rank
-                         COMMA const IODim<T> *howmany_dims COMMA T *ri COMMA
-                             T *ii COMMA T *ro COMMA T *io COMMA unsigned flags,
+                         COMMA const IODim<T> *howmany_dims COMMA T *ri COMMA T
+                             *ii COMMA T *ro COMMA T *io COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          ri COMMA ii COMMA ro COMMA io COMMA flags)
   PLAN_CREATE_METHOD(
       guru64_split_dft,
       int rank COMMA const IODim64<T> *dims COMMA int howmany_rank
-          COMMA const IODim64<T> *howmany_dims COMMA T *ri COMMA T *ii COMMA
-              T *ro COMMA T *io COMMA unsigned flags,
+          COMMA const IODim64<T> *howmany_dims COMMA T *ri COMMA T *ii
+              COMMA T *ro COMMA T *io COMMA unsigned flags,
       rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA ri COMMA ii
           COMMA ro COMMA io COMMA flags)
 
@@ -314,39 +323,42 @@ template <typename T> struct Plan {
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          in COMMA out COMMA flags);
   PLAN_CREATE_METHOD(guru64_dft_r2c,
-                     int rank COMMA const IODim64<T> *dims COMMA int
-                         howmany_rank COMMA const IODim64<T> *howmany_dims COMMA
-                             T *in COMMA Complex<T> *out COMMA unsigned flags,
+                     int rank COMMA const IODim64<T> *dims
+                         COMMA int howmany_rank
+                             COMMA const IODim64<T> *howmany_dims COMMA T *in
+                                 COMMA Complex<T> *out COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          in COMMA out COMMA flags);
   PLAN_CREATE_METHOD(guru_split_dft_r2c,
                      int rank COMMA const IODim<T> *dims COMMA int howmany_rank
-                         COMMA const IODim<T> *howmany_dims COMMA T *in COMMA
-                             T *ro COMMA T *io COMMA unsigned flags,
+                         COMMA const IODim<T> *howmany_dims COMMA T *in
+                             COMMA T *ro COMMA T *io COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          in COMMA ro COMMA io COMMA flags);
   PLAN_CREATE_METHOD(guru64_split_dft_r2c,
-                     int rank COMMA const IODim64<T> *dims COMMA int
-                         howmany_rank COMMA const IODim64<T> *howmany_dims COMMA
-                             T *in COMMA T *ro COMMA T *io COMMA unsigned flags,
+                     int rank COMMA const IODim64<T> *dims
+                         COMMA int howmany_rank
+                             COMMA const IODim64<T> *howmany_dims COMMA T *in
+                                 COMMA T *ro COMMA T *io COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          in COMMA ro COMMA io COMMA flags);
   PLAN_CREATE_METHOD(guru_dft_c2r,
                      int rank COMMA const IODim<T> *dims COMMA int howmany_rank
-                         COMMA const IODim<T> *howmany_dims COMMA
-                             fftw_complex *in COMMA T *out COMMA unsigned flags,
+                         COMMA const IODim<T> *howmany_dims COMMA fftw_complex
+                             *in COMMA T *out COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          in COMMA out COMMA flags);
-  PLAN_CREATE_METHOD(guru64_dft_c2r,
-                     int rank COMMA const IODim64<T> *dims COMMA int
-                         howmany_rank COMMA const IODim64<T> *howmany_dims COMMA
-                             fftw_complex *in COMMA T *out COMMA unsigned flags,
-                     rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
-                         in COMMA out COMMA flags);
+  PLAN_CREATE_METHOD(
+      guru64_dft_c2r,
+      int rank COMMA const IODim64<T> *dims COMMA int howmany_rank
+          COMMA const IODim64<T> *howmany_dims COMMA fftw_complex *in
+              COMMA T *out COMMA unsigned flags,
+      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA in COMMA out
+          COMMA flags);
   PLAN_CREATE_METHOD(guru_split_dft_c2r,
                      int rank COMMA const IODim<T> *dims COMMA int howmany_rank
-                         COMMA const IODim<T> *howmany_dims COMMA T *ri COMMA
-                             T *ii COMMA T *out COMMA unsigned flags,
+                         COMMA const IODim<T> *howmany_dims COMMA T *ri
+                             COMMA T *ii COMMA T *out COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          ri COMMA ii COMMA out COMMA flags);
   PLAN_CREATE_METHOD(guru64_split_dft_c2r,
@@ -362,8 +374,8 @@ template <typename T> struct Plan {
    */
   PLAN_CREATE_METHOD(guru_r2r,
                      int rank COMMA const IODim<T> *dims COMMA int howmany_rank
-                         COMMA const IODim<T> *howmany_dims COMMA T *in COMMA
-                             T *out COMMA const R2RKind<T> *kind
+                         COMMA const IODim<T> *howmany_dims COMMA T *in
+                             COMMA T *out COMMA const R2RKind<T> *kind
                                  COMMA unsigned flags,
                      rank COMMA dims COMMA howmany_rank COMMA howmany_dims COMMA
                          in COMMA out COMMA kind COMMA flags)
@@ -405,8 +417,7 @@ template <typename T> struct Plan {
   PLAN_EXECUTE_METHOD(execute_r2r, T *in COMMA T *out, plan COMMA in COMMA out)
 };
 
-// In memory cache with key type K and value type V
-// additionally accepts a mutex to guard the V constructor
+// In memory cache with key type `Key` and value type `Val`
 template <class Key, class Val> auto get_cached(Key key) -> Val * {
   thread_local std::unordered_map<Key, std::unique_ptr<Val>> cache;
 
@@ -415,31 +426,68 @@ template <class Key, class Val> auto get_cached(Key key) -> Val * {
   return val.get();
 }
 
+// In memory cache with key type `Key` and value type `Val`
+template <class Key, class Val> auto get_cached_stack(Key key) -> Val & {
+  thread_local std::unordered_map<Key, Val> cache;
+
+  if (auto it = cache.find(key); it != cache.end()) { return it->second; }
+
+  auto [it, success] =
+      cache.emplace(std::piecewise_construct, std::forward_as_tuple(key),
+                    std::forward_as_tuple(key));
+
+  return it->second;
+}
+
 template <typename Child> struct cache_mixin {
-  static auto get(size_t n) -> Child & { return *get_cached<size_t, Child>(n); }
+  // static auto get(size_t n) -> Child & { return *get_cached<size_t,
+  // Child>(n); }
+  static auto get(size_t n) -> Child & {
+    return get_cached_stack<size_t, Child>(n);
+  }
 };
 
-template <typename T> struct C2CBuffer {
+template <typename T, bool InPlace = false> struct C2CBuffer {
   using Cx = fftw::Complex<T>;
   Cx *in, *out;
-  explicit C2CBuffer(size_t n)
-      : in(fftw::alloc_complex<T>(n)), out(fftw::alloc_complex<T>(n)) {}
+  explicit C2CBuffer(size_t n) {
+    if constexpr (InPlace) {
+      in = fftw::alloc_complex<T>(n);
+      out = in;
+    } else {
+      in = fftw::alloc_complex<T>(n);
+      out = fftw::alloc_complex<T>(n);
+    }
+  }
   C2CBuffer(const C2CBuffer &) = delete;
   C2CBuffer(C2CBuffer &&) = delete;
   C2CBuffer &operator=(const C2CBuffer &) = delete;
   C2CBuffer &operator=(C2CBuffer &&) = delete;
   ~C2CBuffer() noexcept {
     if (in) fftw::free<T>(in);
-    if (out) fftw::free<T>(out);
+
+    if constexpr (!InPlace) {
+      if (out) fftw::free<T>(out);
+    }
   }
 };
 
-template <typename T> struct C2CSplitBuffer {
+template <typename T, bool InPlace = false> struct C2CSplitBuffer {
   using Cx = fftw::Complex<T>;
   T *ri, *ii, *ro, *io;
-  explicit C2CSplitBuffer(size_t n)
-      : ri(fftw::alloc_real<T>(n)), ii(fftw::alloc_real<T>(n)),
-        ro(fftw::alloc_real<T>(n)), io(fftw::alloc_real<T>(n)) {}
+  explicit C2CSplitBuffer(size_t n) {
+    if constexpr (InPlace) {
+      ri = fftw::alloc_real<T>(n);
+      ii = fftw::alloc_real<T>(n);
+      ro = ri;
+      io = ii;
+    } else {
+      ri = fftw::alloc_real<T>(n);
+      ii = fftw::alloc_real<T>(n);
+      ro = fftw::alloc_real<T>(n);
+      io = fftw::alloc_real<T>(n);
+    }
+  }
   C2CSplitBuffer(const C2CSplitBuffer &) = delete;
   C2CSplitBuffer(C2CSplitBuffer &&) = delete;
   C2CSplitBuffer &operator=(const C2CSplitBuffer &) = delete;
@@ -447,8 +495,11 @@ template <typename T> struct C2CSplitBuffer {
   ~C2CSplitBuffer() noexcept {
     if (ri) fftw::free<T>(ri);
     if (ii) fftw::free<T>(ii);
-    if (ro) fftw::free<T>(ro);
-    if (io) fftw::free<T>(io);
+
+    if constexpr (!InPlace) {
+      if (ro) fftw::free<T>(ro);
+      if (io) fftw::free<T>(io);
+    }
   }
 };
 
@@ -485,7 +536,8 @@ template <typename T> struct R2CSplitBuffer {
   }
 };
 
-template <Floating T> struct EngineDFT1D : public cache_mixin<EngineDFT1D<T>> {
+template <Floating T, bool InPlace = false>
+struct EngineDFT1D : public cache_mixin<EngineDFT1D<T>> {
   using Cx = fftw::Complex<T>;
   using Plan = fftw::Plan<T>;
 
@@ -505,8 +557,8 @@ template <Floating T> struct EngineDFT1D : public cache_mixin<EngineDFT1D<T>> {
   void backward(Cx *in, Cx *out) const { plan_backward.execute(in, out); }
 };
 
-template <Floating T>
-struct EngineDFTSplit1D : public cache_mixin<EngineDFTSplit1D<T>> {
+template <Floating T, bool InPlace = false>
+struct EngineDFTSplit1D : public cache_mixin<EngineDFTSplit1D<T, InPlace>> {
   using Cx = fftw::Complex<T>;
   using Plan = fftw::Plan<T>;
 
@@ -580,6 +632,284 @@ template <typename t> inline void normalize(t *in, size_t len, t fct) {
   for (size_t i = 0; i < len; ++i) {
     in[i] *= fct;
   }
+}
+
+// Take the magnitude of a fftw complex array
+// out = sqrt( in.re^2 + in.im^2 )
+template <Floating T> void magnitude(Complex<T> const *in, T *out, size_t len) {
+  size_t i = 0;
+  for (; i < len; ++i) {
+    const auto re = in[i][0];
+    const auto im = in[i][1];
+    out[i] = std::sqrt(re * re + im * im);
+  }
+}
+
+// Take the magnitude of a split complex array
+// out = sqrt( in.re^2 + in.im^2 )
+template <Floating T>
+void magnitude(T const *ri, T const *ii, T *out, size_t len) {
+  size_t i = 0;
+  for (; i < len; ++i) {
+    const auto re = ri[i];
+    const auto im = ii[i];
+    out[i] = std::sqrt(re * re + im * im);
+  }
+}
+
+#if defined(__AVX2__)
+
+// Normalize `in` by `fct` and take the magnitude of a fftw complex array and
+// scale `in` by `fct out = sqrt( in.re^2 + in.im^2 )
+template <Floating T>
+void scale_and_magnitude_avx2(Complex<T> const *in, T *out, size_t const n,
+                              const T fct) {
+  size_t i = 0;
+  constexpr size_t simd_width = 256 / (8 * sizeof(T));
+
+  if constexpr (std::is_same_v<T, float>) {
+    const auto fct_vec = _mm256_set1_ps(fct);
+
+    for (; i + simd_width <= n; i += simd_width) {
+      auto re =
+          _mm256_set_ps(in[i + 7][0], in[i + 6][0], in[i + 5][0], in[i + 4][0],
+                        in[i + 3][0], in[i + 2][0], in[i + 1][0], in[i][0]);
+      auto im =
+          _mm256_set_ps(in[i + 7][1], in[i + 6][1], in[i + 5][1], in[i + 4][1],
+                        in[i + 3][1], in[i + 2][1], in[i + 1][1], in[i][1]);
+
+      // scale real and imag
+      re = _mm256_mul_ps(re, fct_vec);
+      im = _mm256_mul_ps(im, fct_vec);
+
+      // Square the im and re
+      auto re2 = _mm256_mul_ps(re, re);
+      auto sum2 = _mm256_fmadd_ps(im, im, re2);
+      // sqrt
+      auto mag = _mm256_sqrt_ps(sum2);
+
+      // store
+      _mm256_store_ps(&out[i], mag);
+    }
+
+  } else if constexpr (std::is_same_v<T, double>) {
+    const auto fct_vec = _mm256_set1_pd(fct);
+
+    for (; i + simd_width <= n; i += simd_width) {
+      auto re =
+          _mm256_set_pd(in[i + 3][0], in[i + 2][0], in[i + 1][0], in[i][0]);
+      auto im =
+          _mm256_set_pd(in[i + 3][1], in[i + 2][1], in[i + 1][1], in[i][1]);
+
+      // scale real and imag
+      re = _mm256_mul_pd(re, fct_vec);
+      im = _mm256_mul_pd(im, fct_vec);
+
+      // Square the im and re
+      auto re2 = _mm256_mul_pd(re, re);
+      auto sum2 = _mm256_fmadd_pd(im, im, re2);
+      // sqrt
+      auto mag = _mm256_sqrt_pd(sum2);
+
+      // store
+      _mm256_store_pd(&out[i], mag);
+    }
+
+  } else {
+    static_assert(false, "Not supported.");
+  }
+
+  for (; i < n; ++i) {
+    const auto re = in[i][0] * fct;
+    const auto im = in[i][1] * fct;
+    out[i] = std::sqrt(re * re + im * im);
+  }
+}
+
+#endif
+
+template <Floating T>
+void scale_and_magnitude_serial(Complex<T> const *in, T *out, size_t const len,
+                                const T fct) {
+  size_t i = 0;
+  for (; i < len; ++i) {
+    const auto re = in[i][0] * fct;
+    const auto im = in[i][1] * fct;
+    out[i] = std::sqrt(re * re + im * im);
+  }
+}
+
+// Normalize `in` by `fct` and take the magnitude of a fftw complex array and
+// scale `in` by `fct out = sqrt( in.re^2 + in.im^2 )
+template <Floating T>
+void scale_and_magnitude(Complex<T> const *in, T *out, size_t const len,
+                         const T fct) {
+
+#if defined(__AVX2__)
+
+  scale_and_magnitude_avx2(in, out, len, fct);
+
+#else
+
+  scale_and_magnitude_serial(in, out, len, fct);
+
+#endif
+}
+
+// Take the magnitude of a split complex array
+// out = sqrt( in.re^2 + in.im^2 )
+template <Floating T>
+void scale_and_magnitude(T const *ri, T const *ii, T *out, size_t const len,
+                         const T fct) {
+  size_t i = 0;
+  for (; i < len; ++i) {
+    const auto re = ri[i] * fct;
+    const auto im = ii[i] * fct;
+    out[i] = std::sqrt(re * re + im * im);
+  }
+}
+
+template <typename T>
+void scale_imag_and_magnitude(T const *real, T const *imag, T fct, size_t n,
+                              T *out);
+
+#if defined(__ARM_NEON__)
+
+template <typename T>
+void scale_imag_and_magnitude_neon(T const *real, T const *imag, T fct,
+                                   size_t n, T *out) {
+
+  size_t i = 0;
+  if constexpr (std::is_same_v<T, float>) {
+
+    float32x4_t fct_vec = vdupq_n_f32(fct);
+    constexpr size_t simd_width = 4;
+    for (; i + simd_width <= n; i += simd_width) {
+      auto real_vec = vld1q_f32(&real[i]);
+      auto imag_vec = vld1q_f32(&imag[i]);
+
+      // Proc first set
+      imag_vec = vmulq_f32(imag_vec, fct_vec);
+      real_vec = vmulq_f32(real_vec, real_vec);
+      real_vec = vfmaq_f32(real_vec, imag_vec, imag_vec);
+      auto res = vsqrtq_f32(real_vec);
+      vst1q_f32(&out[i], res);
+    }
+
+  } else if constexpr (std::is_same_v<T, double>) {
+
+    float64x2_t fct_vec = vdupq_n_f64(fct);
+    constexpr size_t simd_width = 2;
+    for (; i + simd_width <= n; i += simd_width) {
+      auto real_vec = vld1q_f64(&real[i]);
+      auto imag_vec = vld1q_f64(&imag[i]);
+
+      imag_vec = vmulq_f64(imag_vec, fct_vec);
+      real_vec = vmulq_f64(real_vec, real_vec);
+      real_vec = vfmaq_f64(real_vec, imag_vec, imag_vec);
+      auto res = vsqrtq_f64(real_vec);
+      vst1q_f64(&out[i], res);
+    }
+
+  } else {
+    static_assert(false, "Not implemented.");
+  }
+
+  // Remaining
+  for (; i < n; ++i) {
+    const auto ri = real[i];
+    const auto ii = imag[i] * fct;
+    const auto res = std::sqrt(ri * ri + ii * ii);
+    out[i] = res;
+  }
+}
+
+#endif
+
+#if defined(__AVX2__)
+
+template <typename T>
+void scale_imag_and_magnitude_avx2(T const *real, T const *imag, T fct,
+                                   size_t n, T *out) {
+  constexpr size_t prefetch_distance = 16;
+  size_t i = 0;
+
+  if constexpr (std::is_same_v<T, float>) {
+
+    constexpr size_t simd_width = 256 / (8 * sizeof(float));
+    const auto fct_vec = _mm256_set1_ps(fct);
+
+    for (; i + simd_width <= n; i += simd_width) {
+      if (i + prefetch_distance < n) {
+        _mm_prefetch((const char *)&real[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&imag[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&out[i + prefetch_distance], _MM_HINT_T0);
+      }
+
+      auto r_vec = _mm256_load_ps(&real[i]);
+      auto i_vec = _mm256_load_ps(&imag[i]);
+
+      i_vec = _mm256_mul_ps(i_vec, fct_vec);
+      r_vec = _mm256_mul_ps(r_vec, r_vec);
+      r_vec = _mm256_fmadd_ps(i_vec, i_vec, r_vec);
+      auto res = _mm256_sqrt_ps(r_vec);
+      _mm256_store_ps(&out[i], res);
+    }
+
+  } else if constexpr (std::is_same_v<T, double>) {
+    constexpr size_t simd_width = 256 / (8 * sizeof(double));
+    const auto fct_vec = _mm256_set1_pd(fct);
+    constexpr size_t prefetch_distance = 16;
+
+    for (; i + simd_width <= n; i += simd_width) {
+      if (i + prefetch_distance < n) {
+        _mm_prefetch((const char *)&real[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&imag[i + prefetch_distance], _MM_HINT_T0);
+        _mm_prefetch((const char *)&out[i + prefetch_distance], _MM_HINT_T0);
+      }
+
+      auto r_vec = _mm256_load_pd(&real[i]);
+      auto i_vec = _mm256_load_pd(&imag[i]);
+      i_vec = _mm256_mul_pd(i_vec, fct_vec);
+      r_vec = _mm256_mul_pd(r_vec, r_vec);
+      r_vec = _mm256_fmadd_pd(i_vec, i_vec, r_vec);
+      auto res = _mm256_sqrt_pd(r_vec);
+      _mm256_store_pd(&out[i], res);
+    }
+  }
+
+  for (; i < n; ++i) {
+    const auto ri = real[i];
+    const auto ii = imag[i] * fct;
+    const auto res = std::sqrt(ri * ri + ii * ii);
+    out[i] = res;
+  }
+}
+
+#endif
+
+template <typename T>
+void scale_imag_and_magnitude(T const *real, T const *imag, T fct, size_t n,
+                              T *out) {
+
+#if defined(__ARM_NEON__)
+
+  scale_imag_and_magnitude_neon<T>(real, imag, fct, n, out);
+
+#elif defined(__AVX2__)
+
+  scale_imag_and_magnitude_avx2<T>(real, imag, fct, n, out);
+
+#else
+
+  for (auto i = 0; i < n; ++i) {
+    const auto ri = real[i];
+    const auto ii = imag[i] * fct;
+    const auto res = std::sqrt(ri * ri + ii * ii);
+    out[i] = res;
+  }
+
+#endif
 }
 
 } // namespace fftw
