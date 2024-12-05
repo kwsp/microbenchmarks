@@ -149,7 +149,7 @@ def plot_throughputs(
         xlim: Upper range of x-axis.
         xlabel: Label for the throughput axis (x on bar plot, y on line plot).
     """
-    func_names, throughputs_mean, throughputs_std = [], [], []
+    func_names, tp_means, tp_stds = [], [], []
 
     xdata = benchmarks["param_1"].unique()
 
@@ -165,35 +165,35 @@ def plot_throughputs(
         if param_2:
             df = df[df.param_2 == param_2]
         func_name = func_name.split("_", 1)[1].split("<", 1)[0]
-        throughput = df.throughput.array * tp_scaler
+        tp = df.throughput.array * tp_scaler
 
         func_names.append(func_name)
-        throughputs_mean.append(np.mean(throughput))
-        throughputs_std.append(np.std(throughput))
+        tp_means.append(np.mean(tp))
+        tp_stds.append(np.std(tp))
 
     if pylib_throughputs:
-        for func_name, throughput in pylib_throughputs:
-            throughput = np.array(throughput) * tp_scaler
+        for func_name, tp in pylib_throughputs:
+            tp = np.asarray(tp) * tp_scaler
 
             func_names.append(func_name)
-            throughputs_mean.append(np.mean(throughput))
-            throughputs_std.append(np.std(throughput))
+            tp_means.append(np.mean(tp))
+            tp_stds.append(np.std(tp))
 
     func_names = [replace_name.get(name, name) for name in func_names]
 
-    func_names = np.array(func_names)
-    throughputs_mean = np.array(throughputs_mean)
-    throughputs_std = np.array(throughputs_std)
+    func_names = np.asarray(func_names)
+    tp_means = np.asarray(tp_means)
+    tp_stds = np.asarray(tp_stds)
 
-    idx = np.argsort(throughputs_mean)
-    throughputs_mean = throughputs_mean[idx]
-    throughputs_std = throughputs_std[idx]
+    idx = np.argsort(tp_means)
+    tp_means = tp_means[idx]
+    tp_stds = tp_stds[idx]
     func_names = func_names[idx]
 
     ### Horizontal Bar plot
     f, ax = plt.subplots()
     x = np.arange(len(func_names))
-    rects = ax.barh(x, throughputs_mean, xerr=(np.zeros(len(x)), throughputs_std))
+    rects = ax.barh(x, tp_means, xerr=(np.zeros(len(x)), tp_stds))
     ax.bar_label(rects, fmt="%.3g")
 
     if highlight_name is not None:
