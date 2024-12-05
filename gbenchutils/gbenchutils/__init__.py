@@ -91,9 +91,36 @@ def benchmark_parse_parameters(benchmark: pd.DataFrame) -> pd.DataFrame:
         ]
 
     # Throughput [samples/s]
-    benchmark["throughput"] = (benchmark.param_1) / (benchmark.real_time * 1e-9)
+    # Note: when using `state.SetItemsProcessed` and `state.SetBytesProcessed`,
+    # Google Benchmark uses "cpu_time" time instead of "real_time" to compute
+    # "bytes_per_second" and "items_per_second".
+    if "" in benchmark.columns:
+        benchmark["throughput"] = benchmark["items_per_second"]
+    else:
+        benchmark["throughput"] = (benchmark.param_1) / (benchmark.cpu_time * 1e-9)
 
     return benchmark
+
+
+def get_display_prefix_and_scaler(val: float) -> tuple[str, float]:
+    if val > 1e12:  # tera
+        return "T", 1e-12
+    if val > 1e9:  # giga
+        return "G", 1e-9
+    elif val > 1e6:  # mega
+        return "M", 1e-6
+    elif val > 1e3:
+        return "K", 1e-3
+    elif val > 0:
+        return "", 1
+    elif val > 1e-3:  # milli
+        return "m", 1e3
+    elif val > 1e-6:  # micro
+        return "u", 1e6
+    elif val > 1e-9:  # nano
+        return "n", 1e9
+    elif val > 1e-12:  # pico
+        return "p", 1e12
 
 
 def plot_throughputs(
@@ -103,9 +130,9 @@ def plot_throughputs(
     highlight_name: str | None = None,
     title: str | None = None,
     group_column="func_name",
-    pylib_throughputs: list[tuple[str, np.ndarray]] = None,
-    xlim: int = 600,
-    xlabel="Throughput (MS/s)",
+    pylib_throughputs: list[tuple[str, np.ndarray]] | None = None,
+    xlim: int | None = None,
+    xlabel="Throughput",
 ):
     """
     Generate a bar chart and a line chart of function throughputs from the benchmark output from Google Benchmark.
@@ -118,19 +145,27 @@ def plot_throughputs(
         param_2: Optional second parameter to filter the DataFrame by.
         replace_name: Optional mapping from func_name to a more display friendly name.
         highlight_name: Highlight this function in the bar plot.
-        pylib_throughputs: A list of pairs (func_name, throughput array) to add to the plots. Throughput. Items per second
-        xlim: Upper range of x-axis
+        pylib_throughputs: A list of pairs (func_name, throughput array) to add to the plots. Throughput. Items per second.
+        xlim: Upper range of x-axis.
+        xlabel: Label for the throughput axis (x on bar plot, y on line plot).
     """
     func_names, throughputs_mean, throughputs_std = [], [], []
 
     xdata = benchmarks["param_1"].unique()
+
+    # Scaling and label
+    # Default MS/s
+    max_tp = benchmarks["throughput"].max()
+    tp_prefix, tp_scaler = get_display_prefix_and_scaler(max_tp)
+
+    xlabel += f" ({tp_prefix}S/s)"
 
     # Compute the mean and stds
     for func_name, df in benchmarks.groupby(group_column):
         if param_2:
             df = df[df.param_2 == param_2]
         func_name = func_name.split("_", 1)[1].split("<", 1)[0]
-        throughput = df.throughput.array * 1e-6  # MS/s
+        throughput = df.throughput.array * tp_scaler
 
         func_names.append(func_name)
         throughputs_mean.append(np.mean(throughput))
@@ -138,7 +173,7 @@ def plot_throughputs(
 
     if pylib_throughputs:
         for func_name, throughput in pylib_throughputs:
-            throughput = np.array(throughput) * 1e-6
+            throughput = np.array(throughput) * tp_scaler
 
             func_names.append(func_name)
             throughputs_mean.append(np.mean(throughput))
@@ -158,8 +193,8 @@ def plot_throughputs(
     ### Horizontal Bar plot
     f, ax = plt.subplots()
     x = np.arange(len(func_names))
-    rects = ax.barh(x, throughputs_mean, xerr=throughputs_std)
-    ax.bar_label(rects, fmt="%.1f")
+    rects = ax.barh(x, throughputs_mean, xerr=(np.zeros(len(x)), throughputs_std))
+    ax.bar_label(rects, fmt="%.3g")
 
     if highlight_name is not None:
         fftconv_idx = np.argmax(func_names == highlight_name)
@@ -184,10 +219,11 @@ def plot_throughputs(
     ax.spines["right"].set_visible(False)
     f.tight_layout()
 
+    cpu_name = cpu.lower().replace(" ", "_").replace("(", "").replace(")", "")
     fname_parts = []
     if param_2:
         fname_parts.append(f"k={param_2}")
-    fname_parts.append(cpu.lower().replace(" ", "_"))
+    fname_parts.append(cpu_name)
 
     fname_bar = "-".join(["bar", *fname_parts]) + ".svg"
     if title:
@@ -202,16 +238,17 @@ def plot_throughputs(
         if param_2:
             df = df[df["param_2"] == param_2]
         xdata = df["param_1"]
-        ydata = df["throughput"] * 1e-6
+        ydata = df["throughput"] * tp_scaler
         name = name.split("_", 1)[1].split("<", 1)[0]
         label = replace_name.get(name, name)
         ax.scatter(xdata, ydata, label=label, marker="x")
         ax.plot(xdata, ydata)
 
-    for name, throughputs in pylib_throughputs:
-        ydata = throughputs * 1e-6
-        ax.scatter(xdata, ydata, label=name, marker="x")
-        ax.plot(xdata, ydata)
+    if pylib_throughputs:
+        for name, throughputs in pylib_throughputs:
+            ydata = throughputs * 1e-6
+            ax.scatter(xdata, ydata, label=name, marker="x")
+            ax.plot(xdata, ydata)
 
     ax.set_ylabel(xlabel)
     # ax.set_yscale("log")
