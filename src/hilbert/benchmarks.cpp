@@ -28,22 +28,23 @@ void hilbert_bench(benchmark::State &state, Func hilbert_func) {
 template <typename T> void BM_hilbert_fftw(benchmark::State &state) {
   hilbert_bench<T>(state, hilbert_fftw<T>);
 }
-BENCHMARK(BM_hilbert_fftw<float>)->Range(2048, 8192);
-BENCHMARK(BM_hilbert_fftw<double>)->Range(2048, 8192);
 
-template <typename T> void BM_hilbert_fftw_split(benchmark::State &state) {
-  hilbert_bench<T>(state, hilbert_fftw_split<T>);
-}
-BENCHMARK(BM_hilbert_fftw_split<float>)->Range(2048, 8192);
-BENCHMARK(BM_hilbert_fftw_split<double>)->Range(2048, 8192);
+BENCHMARK(BM_hilbert_fftw<float>)->DenseRange(2048, 6144, 1024);
+BENCHMARK(BM_hilbert_fftw<double>)->DenseRange(2048, 6144, 1024);
+
+// template <typename T> void BM_hilbert_fftw_split(benchmark::State &state) {
+//   hilbert_bench<T>(state, hilbert_fftw_split<T>);
+// }
+// BENCHMARK(BM_hilbert_fftw_split<float>)->DenseRange(2048,6144,1024);
+// BENCHMARK(BM_hilbert_fftw_split<double>)->DenseRange(2048,6144,1024);
 
 #if defined(HAS_IPP)
 
 template <typename T> void BM_hilbert_ipp(benchmark::State &state) {
   hilbert_bench<T>(state, hilbert_ipp<T>);
 }
-BENCHMARK(BM_hilbert_ipp<float>)->Range(2048, 8192);
-BENCHMARK(BM_hilbert_ipp<double>)->Range(2048, 8192);
+BENCHMARK(BM_hilbert_ipp<float>)->DenseRange(2048, 6144, 1024);
+BENCHMARK(BM_hilbert_ipp<double>)->DenseRange(2048, 6144, 1024);
 
 #endif
 
