@@ -32,6 +32,12 @@ template <typename T> void BM_hilbert_fftw(benchmark::State &state) {
 BENCHMARK(BM_hilbert_fftw<float>)->DenseRange(2048, 6144, 1024);
 BENCHMARK(BM_hilbert_fftw<double>)->DenseRange(2048, 6144, 1024);
 
+template <typename T> void BM_hilbert_fftw_r2c(benchmark::State &state) {
+  hilbert_bench<T>(state, hilbert_fftw_r2c<T>);
+}
+BENCHMARK(BM_hilbert_fftw_r2c<float>)->DenseRange(2048, 6144, 1024);
+BENCHMARK(BM_hilbert_fftw_r2c<double>)->DenseRange(2048, 6144, 1024);
+
 // template <typename T> void BM_hilbert_fftw_split(benchmark::State &state) {
 //   hilbert_bench<T>(state, hilbert_fftw_split<T>);
 // }

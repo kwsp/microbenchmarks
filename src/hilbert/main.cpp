@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
   AlignedVector<T> in(N);
   for (int i = 0; i < N; ++i) {
     in[i] = std::cos(std::numbers::pi_v<T> * 4 * i / (N - 1));
+    // in[i] = i;
   }
 
   {
@@ -22,6 +23,15 @@ int main(int argc, char *argv[]) {
     hilbert_fftw<T>(in, out);
 
     fmt::println("=== hilbert_fftw ===");
+    fmt::println("In: {}", fmt::join(in, ", "));
+    fmt::println("Out: {}", fmt::join(out, ", "));
+  }
+
+  {
+    AlignedVector<T> out(N);
+    hilbert_fftw_r2c<T>(in, out);
+
+    fmt::println("=== hilbert_fftw_r2c ===");
     fmt::println("In: {}", fmt::join(in, ", "));
     fmt::println("Out: {}", fmt::join(out, ", "));
   }

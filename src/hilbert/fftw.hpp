@@ -3,6 +3,7 @@ A C++ FFTW wrapper
  */
 #pragma once
 
+#include <cassert>
 #include <complex>
 #include <cstdlib>
 #include <fftw3.h>
@@ -17,7 +18,7 @@ A C++ FFTW wrapper
 #include <arm_neon.h>
 #endif
 
-// NOLINTBEGIN(*-pointer-arithmetic, *-macro-usage)
+// NOLINTBEGIN(*-pointer-arithmetic, *-macro-usage, *-const-cast)
 
 namespace fftw {
 
@@ -402,20 +403,24 @@ template <typename T> struct Plan {
    * Array execute interface
    * https://fftw.org/fftw3_doc/New_002darray-Execute-Functions.html#New_002darray-Execute-Functions
    */
-  PLAN_EXECUTE_METHOD(execute_dft, Complex<T> *in COMMA Complex<T> *out,
-                      in COMMA out);
+  PLAN_EXECUTE_METHOD(execute_dft, const Complex<T> *in COMMA Complex<T> *out,
+                      const_cast<Complex<T> *>(in) COMMA out);
   PLAN_EXECUTE_METHOD(execute_split_dft,
-                      T *ri COMMA T *ii COMMA T *ro COMMA T *io,
-                      ri COMMA ii COMMA ro COMMA io)
-  PLAN_EXECUTE_METHOD(execute_dft_r2c, T *in COMMA Complex<T> *out,
-                      in COMMA out)
-  PLAN_EXECUTE_METHOD(execute_split_dft_r2c, T *in COMMA T *ro COMMA T *io,
-                      in COMMA ro COMMA io);
-  PLAN_EXECUTE_METHOD(execute_dft_c2r, Complex<T> *in COMMA T *out,
-                      in COMMA out)
-  PLAN_EXECUTE_METHOD(execute_split_dft_c2r, T *ri COMMA T *ii COMMA T *out,
-                      ri COMMA ii COMMA out)
-  PLAN_EXECUTE_METHOD(execute_r2r, T *in COMMA T *out, plan COMMA in COMMA out)
+                      const T *ri COMMA const T *ii COMMA T *ro COMMA T *io,
+                      const_cast<T *>(ri) COMMA const_cast<T *>(ii)
+                          COMMA ro COMMA io)
+  PLAN_EXECUTE_METHOD(execute_dft_r2c, const T *in COMMA Complex<T> *out,
+                      const_cast<T *>(in) COMMA out)
+  PLAN_EXECUTE_METHOD(execute_split_dft_r2c,
+                      const T *in COMMA T *ro COMMA T *io,
+                      const_cast<T *>(in) COMMA ro COMMA io);
+  PLAN_EXECUTE_METHOD(execute_dft_c2r, const Complex<T> *in COMMA T *out,
+                      const_cast<Complex<T> *>(in) COMMA out)
+  PLAN_EXECUTE_METHOD(execute_split_dft_c2r,
+                      const T *ri COMMA const T *ii COMMA T *out,
+                      const_cast<T *>(ri) COMMA const_cast<T *>(ii) COMMA out)
+  PLAN_EXECUTE_METHOD(execute_r2r, const T *in COMMA T *out,
+                      plan COMMA const_cast<T *>(in) COMMA out)
 };
 
 // In memory cache with key type `Key` and value type `Val`
@@ -552,10 +557,9 @@ struct EngineDFT1D : public cache_mixin<EngineDFT1D<T>> {
         plan_backward(Plan::dft_1d(n, buf.out, buf.in, FFTW_BACKWARD, FLAGS)){};
 
   void forward() { plan_forward.execute(); }
-  void forward(Cx *in, Cx *out) const { plan_forward.execute(in, out); }
-
+  void forward(const Cx *in, Cx *out) const { plan_forward.execute(in, out); }
   void backward() { plan_backward.execute(); }
-  void backward(Cx *in, Cx *out) const { plan_backward.execute(in, out); }
+  void backward(const Cx *in, Cx *out) const { plan_backward.execute(in, out); }
 };
 
 template <Floating T, bool InPlace = false>
@@ -585,10 +589,13 @@ struct EngineDFTSplit1D : public cache_mixin<EngineDFTSplit1D<T, InPlace>> {
         };
 
   void forward() { plan_forward.execute(); }
-  void forward(Cx *in, Cx *out) const { plan_forward.execute(in, out); }
-
+  void forward(const T *ri, const T *ii, T *ro, T *io) const {
+    plan_forward.execute_split_dft(ri, ii, ro, io);
+  }
   void backward() { plan_backward.execute(); }
-  void backward(Cx *in, Cx *out) const { plan_backward.execute(in, out); }
+  void backward(const T *ro, const T *io, T *ri, T *ii) const {
+    plan_backward.execute_split_dft(ro, io, ri, ii);
+  }
 };
 
 template <Floating T> struct EngineR2C1D : public cache_mixin<EngineR2C1D<T>> {
@@ -606,10 +613,13 @@ template <Floating T> struct EngineR2C1D : public cache_mixin<EngineR2C1D<T>> {
             Plan::dft_c2r_1d(static_cast<int>(n), buf.out, buf.in, FLAGS)) {}
 
   void forward() { plan_forward.execute(); }
-  void forward(T *in, Cx *out) const { plan_forward.execute_dft_r2c(in, out); }
-
-  void backward() const { plan_forward.execute(); }
-  void backward(Cx *in, T *out) const { plan_forward.execute_dft_c2r(in, out); }
+  void forward(const T *in, Cx *out) const {
+    plan_forward.execute_dft_r2c(in, out);
+  }
+  void backward() { plan_backward.execute(); }
+  void backward(const Cx *in, T *out) const {
+    plan_backward.execute_dft_c2r(in, out);
+  }
 };
 
 /**
@@ -909,4 +919,4 @@ void scale_imag_and_magnitude(T const *real, T const *imag, T fct, size_t n,
 
 } // namespace fftw
 
-// NOLINTEND(*-pointer-arithmetic, *-macro-usage)
+// NOLINTEND(*-pointer-arithmetic, *-macro-usage, *-const-cast)

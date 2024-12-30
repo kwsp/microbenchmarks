@@ -66,5 +66,5 @@ public:
 
 #include <vector>
 
-template <typename T, std::size_t ALIGNMENT_IN_BYTES = 64>
+template <typename T, std::size_t ALIGNMENT_IN_BYTES = 32>
 using AlignedVector = std::vector<T, AlignedAllocator<T, ALIGNMENT_IN_BYTES>>;
