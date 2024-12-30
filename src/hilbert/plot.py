@@ -1,9 +1,13 @@
 # %%
 from gbenchutils import load_benchmarks_from_default_build_dir
 import gbenchutils
+import os
 
 
-context, benchmarks, xdata = load_benchmarks_from_default_build_dir("output.json")
+compiler = "clang-cl" if os.name == "nt" else None
+context, benchmarks, xdata = load_benchmarks_from_default_build_dir(
+    "output.json", compiler
+)
 
 benchmarks.head()
 
@@ -57,7 +61,7 @@ replace_name = {
 fig = gbenchutils.plot_throughputs(
     benchmarks[benchmarks["template_param_1"] == "double"],
     replace_name=replace_name,
-    highlight_name="fftw (split transform)",
+    highlight_name="fftw_r2c",
     title="Hilbert float64",
     pylib_throughputs=pylib_throughputs,
 )
@@ -65,7 +69,7 @@ fig = gbenchutils.plot_throughputs(
 fig = gbenchutils.plot_throughputs(
     benchmarks[benchmarks["template_param_1"] == "float"],
     replace_name=replace_name,
-    highlight_name="fftw (split transform)",
+    highlight_name="fftw_r2c",
     title="Hilbert float32",
     pylib_throughputs=pylib_throughputs,
 )
