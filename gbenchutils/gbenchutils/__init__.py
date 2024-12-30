@@ -12,22 +12,22 @@ cpu: str = cpu_info["brand_raw"]
 print(cpu)
 
 
-def get_default_build_dir(out="output.json") -> Path:
+def get_default_build_dir(out="output.json", compiler=None) -> Path:
     """
     Assumes the current working directory is the source directory, and the project is built with cl on Windows and clang everywhere else.
     """
-    if os.name == "nt":
-        path = Path() / "../../build/cl/src" / Path.cwd().name / f"Release/{out}"
-    else:
-        path = Path() / "../../build/clang/src" / Path.cwd().name / f"Release/{out}"
+    if not compiler:
+        if os.name == "nt":
+            compiler = "cl"
+        else:
+            compiler = "clang"
+    return Path() / f"../../build/{compiler}/src/{Path.cwd().name}/Release/{out}"
 
-    return path
 
-
-def load_benchmarks_from_default_build_dir(out="output.json"):
+def load_benchmarks_from_default_build_dir(out="output.json", compiler=None):
     import json
 
-    path = get_default_build_dir(out)
+    path = get_default_build_dir(out, compiler)
 
     with open(path, "r") as fp:
         d = json.load(fp)
