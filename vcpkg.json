@@ -11,25 +11,37 @@
     {
       "name": "opencv",
       "platform": "x64",
-      "features": ["tbb", "ipp", "world"]
+      "features": [
+        "tbb",
+        "ipp",
+        "world"
+      ]
     },
     {
       "name": "opencv",
       "platform": "!x64",
-      "features": ["world"]
+      "features": [
+        "world"
+      ]
     },
     {
       "name": "fftw3",
       "platform": "x64",
-      "features": ["avx2", "threads"]
+      "features": [
+        "avx2",
+        "threads"
+      ]
     },
     {
       "name": "fftw3",
       "platform": "!x64",
-      "features": ["threads"]
+      "features": [
+        "threads"
+      ]
     },
     "fftconv",
     "openblas",
     "kfr"
-  ]
+  ],
+  "builtin-baseline": "4b6c50d962cc20aaa3ef457f8ba683b586263cfb"
 }
