@@ -1,5 +1,5 @@
 #include "conv1d.hpp"
-#include "fftconv.hpp"
+#include <fftconv/fftconv.hpp>
 #include <fftw3.h>
 
 #ifdef HAS_IPP
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   {
     // TODO run ASAN
     std::vector<T> output(output_size_same, 0);
-    fftconv::oaconvolve_fftw_same<T>(input, kernel, output);
+    fftconv::oaconvolve_fftw<T, fftconv::Same>(input, kernel, output);
     fmt::println("=== fftconv (oa, same) ===");
     fmt::println("Output: {}", fmt::join(output, ", "));
   }

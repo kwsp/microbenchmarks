@@ -1,18 +1,3 @@
-find_package(fmt CONFIG REQUIRED)
-find_package(benchmark CONFIG REQUIRED)
-find_package(GTest CONFIG REQUIRED)
-find_package(Armadillo REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(FFTW3 CONFIG REQUIRED)
-find_package(FFTW3f CONFIG REQUIRED)
-find_package(OpenCV CONFIG REQUIRED)
-find_path(FFTCONV_INCLUDE_DIRS "fftconv.hpp")
-
-find_package(IPP CONFIG)
-if (IPP_FOUND)
-  message("Found Intel IPP")
-endif()
-
 function(add_executable_script EXE_NAME)
   add_executable(${EXE_NAME} ${ARGN})
   set_target_properties(${EXE_NAME} PROPERTIES
@@ -40,8 +25,6 @@ function(add_executable_script EXE_NAME)
     target_compile_definitions(${EXE_NAME} PRIVATE -DHAS_IPP)
   endif()
 
-  target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
-
 endfunction()
 
 
@@ -52,11 +35,3 @@ target_link_libraries(hilbert_bench PRIVATE benchmark::benchmark)
 
 add_executable_script(ScaleAndMag_bench benchmark_scale_and_mag.cpp)
 target_link_libraries(ScaleAndMag_bench PRIVATE benchmark::benchmark)
-
-enable_testing()
-
-add_executable_script(fftw_test test_fftw.cpp)
-target_link_libraries(fftw_test PRIVATE
-  GTest::gtest
-  GTest::gtest_main
-)

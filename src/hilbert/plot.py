@@ -45,6 +45,20 @@ np_throughput
 
 
 # %%
+has_pyfftconv = False
+try:
+    import pyfftconv
+
+    has_pyfftconv = True
+
+    pyfftconv_throughput = measure_throughput_np(pyfftconv.hilbert, xdata)
+    print(pyfftconv_throughput)
+
+except ImportError:
+    pass
+
+
+# %%
 import importlib
 
 importlib.reload(gbenchutils)
@@ -52,9 +66,11 @@ importlib.reload(gbenchutils)
 pylib_throughputs = [
     (f"Numpy {np.__version__}\n+ Scipy {sp.__version__}", np_throughput),
 ]
+if has_pyfftconv:
+    pylib_throughputs.append(("pyfftconv.hilbert", pyfftconv_throughput))
 
 replace_name = {
-    "fftw_split": "fftw (split transform)",
+    "fftw": "fftw::hilbert",
     "ipp": "Intel IPP",
 }
 
@@ -73,9 +89,6 @@ fig = gbenchutils.plot_throughputs(
     title="Hilbert float32",
     pylib_throughputs=pylib_throughputs,
 )
-
-# %%
-benchmarks
 
 # %%
 

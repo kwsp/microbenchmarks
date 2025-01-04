@@ -1,8 +1,7 @@
 #include "conv1d.hpp"
 #include <armadillo>
 #include <benchmark/benchmark.h>
-#include <fftconv.hpp>
-#include <fftw.hpp>
+#include <fftconv/fftconv.hpp>
 #include <vector>
 
 #define RUN_ALL
@@ -45,6 +44,9 @@ void conv_bench_full(benchmark::State &state, Func conv_func) {
   for (auto _ : state) {
     conv_func(input, kernel, output);
   }
+
+  state.SetItemsProcessed(state.iterations() * state.range(0));
+  state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(T));
 }
 
 template <typename T, typename Func>
@@ -57,6 +59,9 @@ void conv_bench_same(benchmark::State &state, Func conv_func) {
   for (auto _ : state) {
     conv_func(input, kernel, output);
   }
+
+  state.SetItemsProcessed(state.iterations() * state.range(0));
+  state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(T));
 }
 
 template <typename T, typename Func>
@@ -69,6 +74,9 @@ void conv_bench_valid(benchmark::State &state, Func conv_func) {
   for (auto _ : state) {
     conv_func(input, kernel, output);
   }
+
+  state.SetItemsProcessed(state.iterations() * state.range(0));
+  state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(T));
 }
 
 #ifdef RUN_ALL
@@ -94,12 +102,15 @@ template <typename T> static void BM_conv1d_BLAS(benchmark::State &state) {
   for (auto _ : state) {
     conv1d_BLAS_im2col<T>(input, kernel, im2col, output);
   }
+
+  state.SetItemsProcessed(state.iterations() * state.range(0));
+  state.SetBytesProcessed(state.iterations() * state.range(0) * sizeof(T));
 }
 BENCHMARK(BM_conv1d_BLAS<double>)->ArgsProduct(ARGS);
 
 // Wrapper to prevent arma::conv from being optimized away
 // Not storing results back in res.
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void arma_conv_full(const std::span<const Real> span1,
                     const std::span<const Real> span2,
                     std::span<Real> span_res) {
@@ -112,31 +123,29 @@ void arma_conv_full(const std::span<const Real> span1,
   volatile arma::Col<Real> res = arma::conv(vec1, vec2);
 }
 
-template <fftconv::FloatOrDouble Real>
-void BM_conv1d_Arma(benchmark::State &state) {
+template <fftconv::Floating Real> void BM_conv1d_Arma(benchmark::State &state) {
   conv_bench_full<Real>(state, arma_conv_full<Real>);
 }
 BENCHMARK(BM_conv1d_Arma<double>)->ArgsProduct(ARGS);
 
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void BM_conv1d_Eigen(benchmark::State &state) {
   conv_bench_full<Real>(state, conv1d_eigen<Real>);
 }
 BENCHMARK(BM_conv1d_Eigen<double>)->ArgsProduct(ARGS);
 
-template <fftconv::FloatOrDouble Real>
-void BM_conv1d_KFR(benchmark::State &state) {
+template <fftconv::Floating Real> void BM_conv1d_KFR(benchmark::State &state) {
   conv_bench_same<Real>(state, conv1d_KFR_fir<Real>);
 }
 BENCHMARK(BM_conv1d_KFR<double>)->ArgsProduct(ARGS);
 
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void BM_conv1d_OpenCV(benchmark::State &state) {
   conv_bench_same<Real>(state, conv1d_OpenCV<Real>);
 }
 BENCHMARK(BM_conv1d_OpenCV<double>)->ArgsProduct(ARGS);
 
-// template <fftconv::FloatOrDouble Real>
+// template <fftconv::Floating Real>
 // void BM_conv1d_OpenCV_intrin(benchmark::State &state) {
 //   conv_bench_same<Real>(state, conv1d_OpenCV_intrin<Real>);
 // }
@@ -144,33 +153,33 @@ BENCHMARK(BM_conv1d_OpenCV<double>)->ArgsProduct(ARGS);
 
 #endif // RUN_ALL
 
-// template <fftconv::FloatOrDouble Real>
+// template <fftconv::Floating Real>
 // void BM_conv1d_fftconv(benchmark::State &state) {
 //   conv_bench_full<Real>(state, fftconv::convolve_fftw<Real>);
 // }
 // BENCHMARK(BM_conv1d_fftconv<double>)->ArgsProduct(ARGS);
 
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void BM_conv1d_fftconv_oa(benchmark::State &state) {
   conv_bench_full<Real>(state, fftconv::oaconvolve_fftw<Real>);
 }
 BENCHMARK(BM_conv1d_fftconv_oa<double>)->ArgsProduct(ARGS);
 
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void BM_conv1d_fftconv_oa_same(benchmark::State &state) {
-  conv_bench_same<Real>(state, fftconv::oaconvolve_fftw_same<Real>);
+  conv_bench_same<Real>(state, fftconv::oaconvolve_fftw<Real, fftconv::Same>);
 }
 // BENCHMARK(BM_conv1d_fftconv_oa_same<double>)->ArgsProduct(ARGS);
 
 #ifdef HAS_IPP
 
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void BM_conv1d_ipp_full_direct(benchmark::State &state) {
   conv_bench_full<Real>(state, conv1d_IPP<Real, IppAlgType::ippAlgDirect>);
 }
 BENCHMARK(BM_conv1d_ipp_full_direct<double>)->ArgsProduct(ARGS);
 
-template <fftconv::FloatOrDouble Real>
+template <fftconv::Floating Real>
 void BM_conv1d_ipp_full_fft(benchmark::State &state) {
   conv_bench_full<Real>(state, conv1d_IPP<Real, IppAlgType::ippAlgFFT>);
 }
@@ -192,7 +201,7 @@ BENCHMARK(BM_conv1d_Accelerate_vDSP<double>)->ArgsProduct(ARGS);
 #endif
 
 int main(int argc, char **argv) {
-  fftw::WisdomSetup fftwWisdom;
+  fftw::WisdomSetup fftwWisdom(false);
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();

@@ -1,6 +1,6 @@
-#include "aligned_vector.hpp"
-#include "hilbert.hpp"
 #include <cmath>
+#include <fftconv/aligned_vector.hpp>
+#include <fftconv/hilbert.hpp>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <numbers>
@@ -20,27 +20,9 @@ int main(int argc, char *argv[]) {
 
   {
     AlignedVector<T> out(N);
-    hilbert_fftw<T>(in, out);
+    fftconv::hilbert<T>(in, out);
 
     fmt::println("=== hilbert_fftw ===");
-    fmt::println("In: {}", fmt::join(in, ", "));
-    fmt::println("Out: {}", fmt::join(out, ", "));
-  }
-
-  {
-    AlignedVector<T> out(N);
-    hilbert_fftw_r2c<T>(in, out);
-
-    fmt::println("=== hilbert_fftw_r2c ===");
-    fmt::println("In: {}", fmt::join(in, ", "));
-    fmt::println("Out: {}", fmt::join(out, ", "));
-  }
-
-  {
-    AlignedVector<T> out(N);
-    hilbert_fftw_split<T>(in, out);
-
-    fmt::println("=== hilbert_fftw_split ===");
     fmt::println("In: {}", fmt::join(in, ", "));
     fmt::println("Out: {}", fmt::join(out, ", "));
   }

@@ -4,7 +4,8 @@ import gbenchutils
 context, benchmarks, xdata = gbenchutils.load_benchmarks_from_default_build_dir(
     "output.json"
 )
-param_2 = 165
+# param_2 = 165
+param_2 = 245
 
 
 # %%
@@ -47,40 +48,64 @@ scipy_oa_throughputs = measure_func_throughput_np(signal.oaconvolve, xdata, para
 scipy_oa_throughputs
 
 # %%
-import torch
-import torch.nn.functional as F
+has_pyfftconv = False
+try:
+    import pyfftconv
 
+    has_pyfftconv = True
 
-def measure_func_throughput_torch(func: callable, N: int, k: int, iterations=10000):
-    if isinstance(N, (int, np.integer)):
-        kernel = torch.rand((1, 1, k), dtype=torch.float64)
-        arr = torch.rand((1, 1, N), dtype=torch.float64)
-        with torch.no_grad():
-            time = (
-                timeit.timeit(lambda: func(arr, kernel), number=iterations) / iterations
+    pyfftconv_throughputs = measure_func_throughput_np(
+        pyfftconv.oaconvolve, xdata, param_2
+    )
+
+except ImportError:
+    pass
+
+# %%
+has_pytorch = False
+try:
+    import torch
+    import torch.nn.functional as F
+
+    has_pytorch = True
+
+    def measure_func_throughput_torch(func: callable, N: int, k: int, iterations=10000):
+        if isinstance(N, (int, np.integer)):
+            kernel = torch.rand((1, 1, k), dtype=torch.float64)
+            arr = torch.rand((1, 1, N), dtype=torch.float64)
+            with torch.no_grad():
+                time = (
+                    timeit.timeit(lambda: func(arr, kernel), number=iterations)
+                    / iterations
+                )
+            throughput = N / time
+            return throughput
+        else:
+            return np.array(
+                [measure_func_throughput_torch(func, n, param_2) for n in tqdm(N)]
             )
-        throughput = N / time
-        return throughput
-    else:
-        return np.array(
-            [measure_func_throughput_torch(func, n, param_2) for n in tqdm(N)]
-        )
 
+    torch_throughputs = measure_func_throughput_torch(F.conv1d, xdata, param_2)
+    torch_throughputs
 
-torch_throughputs = measure_func_throughput_torch(F.conv1d, xdata, param_2)
-torch_throughputs
-
+except ImportError:
+    pass
 
 # %%
 
-torch_version = torch.__version__.split("+")[0]
 python_lib_throughputs = [
     (f"Numpy {np.__version__}", numpy_throughputs),
     (f"Scipy {sp.__version__}", scipy_throughputs),
     (f"Scipy {sp.__version__} (fft)", scipy_fft_throughputs),
     (f"Scipy {sp.__version__} (oa)", scipy_oa_throughputs),
-    (f"PyTorch {torch_version}", torch_throughputs),
 ]
+
+if has_pyfftconv:
+    python_lib_throughputs.append(("pyfftconv.oaconvolve", pyfftconv_throughputs))
+
+if has_pytorch:
+    torch_version = torch.__version__.split("+")[0]
+    python_lib_throughputs.append((f"PyTorch {torch_version}", torch_throughputs))
 
 
 REPLACE = {

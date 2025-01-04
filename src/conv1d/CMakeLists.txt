@@ -1,19 +1,3 @@
-find_package(fmt CONFIG REQUIRED)
-find_package(benchmark CONFIG REQUIRED)
-find_package(Armadillo REQUIRED)
-find_package(Eigen3 CONFIG REQUIRED)
-find_package(OpenBLAS CONFIG REQUIRED)
-find_package(KFR CONFIG REQUIRED)
-find_package(FFTW3 CONFIG REQUIRED)
-find_package(FFTW3f CONFIG REQUIRED)
-find_package(OpenCV CONFIG REQUIRED)
-find_path(FFTCONV_INCLUDE_DIRS "fftconv.hpp")
-
-find_package(IPP CONFIG)
-if (IPP_FOUND)
-  message("Found Intel IPP")
-endif()
-
 function(add_executable_script EXE_NAME)
   add_executable(${EXE_NAME} ${ARGN})
   set_target_properties(${EXE_NAME} PROPERTIES
@@ -50,12 +34,10 @@ function(add_executable_script EXE_NAME)
     target_link_libraries(${EXE_NAME} PRIVATE kfr_dsp_neon64)
   endif()
 
-  target_include_directories(${EXE_NAME} PRIVATE ${FFTCONV_INCLUDE_DIRS})
-
 endfunction()
 
 
 add_executable_script(conv1d main.cpp)
 
-add_executable_script(conv1d_benchmarks benchmarks.cpp)
-target_link_libraries(conv1d_benchmarks PRIVATE benchmark::benchmark benchmark::benchmark_main)
+add_executable_script(conv1d_bench benchmarks.cpp)
+target_link_libraries(conv1d_bench PRIVATE benchmark::benchmark benchmark::benchmark_main)

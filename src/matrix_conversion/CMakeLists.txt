@@ -1,11 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-project(MatrixConversionBenchmark)
-
-find_package(Armadillo REQUIRED)
-find_package(benchmark REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(OpenMP)
-
 set(TARGET matrix_conversion_benchmark)
 
 add_executable(${TARGET} matrix_conversion_benchmark.cpp)

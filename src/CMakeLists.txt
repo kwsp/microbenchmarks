@@ -1,3 +1,20 @@
+cmake_minimum_required(VERSION 3.26)
+
+find_package(fmt CONFIG REQUIRED)
+find_package(benchmark CONFIG REQUIRED)
+find_package(Armadillo REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(OpenBLAS CONFIG REQUIRED)
+find_package(KFR CONFIG REQUIRED)
+find_package(FFTW3 CONFIG REQUIRED)
+find_package(FFTW3f CONFIG REQUIRED)
+find_package(OpenCV CONFIG REQUIRED)
+
+find_package(IPP CONFIG)
+if (IPP_FOUND)
+  message("Found Intel IPP")
+endif()
+
 add_subdirectory(matrix_conversion)
 add_subdirectory(matrix_shift)
 add_subdirectory(conv1d)

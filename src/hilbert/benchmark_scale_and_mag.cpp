@@ -1,7 +1,6 @@
 #include <benchmark/benchmark.h>
-
-#include "aligned_vector.hpp"
-#include "fftw.hpp"
+#include <fftconv/aligned_vector.hpp>
+#include <fftconv/fftw.hpp>
 
 template <typename T, typename Func>
 void ScaleAndMag(benchmark::State &state, Func func) {

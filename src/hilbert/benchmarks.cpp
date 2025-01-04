@@ -1,7 +1,7 @@
-#include "aligned_vector.hpp"
-#include "hilbert.hpp"
 #include <benchmark/benchmark.h>
 #include <cmath>
+#include <fftconv/aligned_vector.hpp>
+#include <fftconv/hilbert.hpp>
 #include <numbers>
 
 // NOLINTBEGIN(*-magic-numbers)
@@ -26,17 +26,10 @@ void hilbert_bench(benchmark::State &state, Func hilbert_func) {
 }
 
 template <typename T> void BM_hilbert_fftw(benchmark::State &state) {
-  hilbert_bench<T>(state, hilbert_fftw<T>);
+  hilbert_bench<T>(state, fftconv::hilbert<T>);
 }
-
 BENCHMARK(BM_hilbert_fftw<float>)->DenseRange(2048, 6144, 1024);
 BENCHMARK(BM_hilbert_fftw<double>)->DenseRange(2048, 6144, 1024);
-
-template <typename T> void BM_hilbert_fftw_r2c(benchmark::State &state) {
-  hilbert_bench<T>(state, hilbert_fftw_r2c<T>);
-}
-BENCHMARK(BM_hilbert_fftw_r2c<float>)->DenseRange(2048, 6144, 1024);
-BENCHMARK(BM_hilbert_fftw_r2c<double>)->DenseRange(2048, 6144, 1024);
 
 // template <typename T> void BM_hilbert_fftw_split(benchmark::State &state) {
 //   hilbert_bench<T>(state, hilbert_fftw_split<T>);
