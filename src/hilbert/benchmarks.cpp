@@ -6,6 +6,8 @@
 
 // NOLINTBEGIN(*-magic-numbers)
 
+using fftconv::AlignedVector;
+
 template <typename T, typename Func>
 void hilbert_bench(benchmark::State &state, Func hilbert_func) {
 

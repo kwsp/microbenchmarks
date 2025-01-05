@@ -8,6 +8,8 @@
 
 // NOLINTBEGIN(*-magic-numbers)
 
+using fftconv::AlignedVector;
+
 int main(int argc, char *argv[]) {
   using T = float;
   constexpr int N = 10;

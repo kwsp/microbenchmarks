@@ -2,6 +2,8 @@
 #include <fftconv/aligned_vector.hpp>
 #include <fftconv/fftw.hpp>
 
+using fftconv::AlignedVector;
+
 template <typename T, typename Func>
 void ScaleAndMag(benchmark::State &state, Func func) {
   const auto N = state.range(0);
