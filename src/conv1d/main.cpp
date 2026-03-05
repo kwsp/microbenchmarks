@@ -76,22 +76,6 @@ int main(int argc, char *argv[]) {
 
   {
     std::vector<T> output(output_size_same, 0);
-    conv1d_KFR_fir<T>(input, kernel, output);
-    fmt::println("=== KFR (FIR convolve) ===");
-    fmt::println("Output: {}", fmt::join(output, ", "));
-  }
-
-  // #ifndef __APPLE__
-  //   {
-  //     std::vector<T> output(output_size_same, 0);
-  //     conv1d_kfr_oa<T>(input, kernel, output);
-  //     fmt::println("=== KFR (oa) ===");
-  //     fmt::println("Output: {}", fmt::join(output, ", "));
-  //   }
-  // #endif
-
-  {
-    std::vector<T> output(output_size_same, 0);
     conv1d_OpenCV<T>(input, kernel, output);
     fmt::println("=== OpenCV ===");
     fmt::println("Output: {}", fmt::join(output, ", "));

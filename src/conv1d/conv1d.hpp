@@ -3,7 +3,6 @@
 #include <Eigen/Dense>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <kfr/all.hpp>
 #include <opencv2/core/hal/intrin.hpp>
 #include <opencv2/opencv.hpp>
 #include <span>
@@ -305,34 +304,6 @@ void conv1d_eigen(const std::span<const T> input_,
     output(i) = input.segment(i, kernel_size).dot(kernel);
   }
 }
-
-/*
-KFR (same mode)
-*/
-template <typename T>
-void conv1d_KFR_fir(const std::span<const T> input,
-                    const std::span<const T> kernel, std::span<T> output) {
-
-  auto input_ = kfr::make_univector(input.data(), input.size());
-  auto kernel_ = kfr::make_univector(kernel.data(), kernel.size());
-  auto output_ = kfr::make_univector(output.data(), output.size());
-
-  kfr::filter_fir<T> filter(kernel_);
-  filter.apply(output_, input_);
-}
-
-// Link error
-// #ifndef __APPLE__
-// template <typename T>
-// void conv1d_kfr_oa(const std::span<const T> input,
-//                    const std::span<const T> kernel, std::span<T> output) {
-//   auto input_ = kfr::make_univector(input.data(), input.size());
-//   auto kernel_ = kfr::make_univector(kernel.data(), kernel.size());
-//   auto output_ = kfr::make_univector(output.data(), output.size());
-//   kfr::convolve_filter<T> filter(kernel_);
-//   filter.apply(output_, input_);
-// }
-// #endif
 
 /*
 OpenCV (same mode)

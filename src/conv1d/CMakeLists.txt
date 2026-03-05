@@ -20,18 +20,12 @@ function(add_executable_script EXE_NAME)
     Eigen3::Eigen
     FFTW3::fftw3
     FFTW3::fftw3f
-    kfr
-    kfr_dsp
     opencv_world
   )
 
   if (IPP_FOUND)
     target_link_libraries(${EXE_NAME} PRIVATE ${IPP_LIBRARIES})
     target_compile_definitions(${EXE_NAME} PRIVATE -DHAS_IPP)
-  endif()
-  
-  if (APPLE)
-    target_link_libraries(${EXE_NAME} PRIVATE kfr_dsp_neon64)
   endif()
 
 endfunction()

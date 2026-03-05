@@ -134,11 +134,6 @@ void BM_conv1d_Eigen(benchmark::State &state) {
 }
 BENCHMARK(BM_conv1d_Eigen<double>)->ArgsProduct(ARGS);
 
-template <fftconv::Floating Real> void BM_conv1d_KFR(benchmark::State &state) {
-  conv_bench_same<Real>(state, conv1d_KFR_fir<Real>);
-}
-BENCHMARK(BM_conv1d_KFR<double>)->ArgsProduct(ARGS);
-
 template <fftconv::Floating Real>
 void BM_conv1d_OpenCV(benchmark::State &state) {
   conv_bench_same<Real>(state, conv1d_OpenCV<Real>);
